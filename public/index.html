@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Be the Boss</title>
+  <meta name="description" content="Make 8 business decisions and see how your company does in its first year.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+</head>
+<body>
+
+  <!-- START -->
+  <section id="start" class="screen active">
+    <div class="start-inner">
+      <p class="kicker" id="kicker">Business Studies · Open Evening</p>
+      <h1>Be the <span>Boss</span></h1>
+      <p class="lead">You've got £5,000 and a big idea.<br>Make <strong>8 decisions</strong>. See if your business survives its first year.</p>
+      <div class="start-icons" aria-hidden="true">🧋 🏙️ 💷 ⭐ 👥 📣 ♻️ 🚨</div>
+      <button class="big-btn" id="startBtn">Start my business ▶</button>
+      <div class="board" id="startBoard"></div>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="screen">
+    <header class="topbar">
+      <ol class="steps" id="steps"></ol>
+      <div class="meters">
+        <div class="meter" id="mCustomers">
+          <span class="m-icon">👥</span>
+          <div class="m-body"><span class="m-label">Customers<span class="long"> / month</span></span><span class="m-val">?</span><div class="bar"><i></i></div></div>
+        </div>
+        <div class="meter" id="mRep">
+          <span class="m-icon">⭐</span>
+          <div class="m-body"><span class="m-label">Reputation</span><span class="m-val stars">?</span></div>
+        </div>
+        <div class="meter" id="mProfit">
+          <span class="m-icon">💷</span>
+          <div class="m-body"><span class="m-label">Profit<span class="long"> (year 1)</span></span><span class="m-val">?</span></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="play">
+      <div class="scene" id="scene" aria-hidden="true">
+        <div class="browser"><span></span><span></span><span></span><b id="url">www.yourbusiness.co.uk</b></div>
+        <div class="sky"><div class="sun">☀️</div><div class="cloud c1">☁️</div><div class="cloud c2">☁️</div></div>
+        <div class="backdrop" id="backdrop"></div>
+        <div class="ground"></div>
+
+        <div class="promo layer" id="promo"></div>
+
+        <div class="shop layer" id="shop">
+          <div class="sign" id="sign">Your Business</div>
+          <div class="awning" id="awning"></div>
+          <div class="front">
+            <div class="window"><div class="goods" id="goods"></div><div class="staff" id="staff"></div></div>
+            <div class="door"></div>
+          </div>
+          <div class="eco layer" id="eco"></div>
+          <div class="response layer" id="response"></div>
+        </div>
+        <div class="pricetag layer" id="pricetag">£?</div>
+
+        <div class="rival layer" id="rival">
+          <div class="rival-sign">RIVAL 😈</div>
+          <div class="rival-shop">🏪</div>
+        </div>
+
+        <div class="queue" id="queue"></div>
+      </div>
+
+      <div class="panel" id="panel">
+        <div class="question" id="question">
+          <p class="q-step" id="qStep"></p>
+          <h2 id="qTitle"></h2>
+          <div class="options" id="options"></div>
+          <button class="feedback" id="feedback"><span class="fb-emoji" id="fbEmoji"></span><span class="fb-text" id="fbText"></span><span class="fb-next">Next ▶<i id="fbTimer"></i></span></button>
+        </div>
+
+        <div class="results" id="results">
+          <p class="r-name" id="rName"></p>
+          <h2 class="r-profit" id="rProfit"></h2>
+          <p class="r-sub" id="rSub"></p>
+          <div class="r-stars" id="rStars"></div>
+          <p class="r-title" id="rTitle"></p>
+
+          <div class="money">
+            <div class="money-row"><span>Money in</span><div class="mbar"><i class="in" id="barIn"></i></div><b id="valIn"></b></div>
+            <div class="money-row"><span>Money out</span><div class="mbar" id="barOut"></div><b id="valOut"></b></div>
+            <div class="legend" id="legend"></div>
+          </div>
+
+          <div class="lessons" id="lessons"></div>
+          <div class="board" id="board"></div>
+          <button class="big-btn" id="againBtn">Play again ↻</button>
+          <p class="cta" id="cta">Want to learn how real businesses make these calls? Ask us about Business Studies!</p>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <script src="model.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

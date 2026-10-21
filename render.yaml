@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: be-the-boss
+    runtime: static
+    buildCommand: echo "No build step"
+    staticPublishPath: ./public
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache

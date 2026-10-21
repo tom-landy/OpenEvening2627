@@ -29,9 +29,18 @@ const STEPS = [
       return { emoji: "🎯", text: `Your goals: <b>${a.label}</b> and <b>${b.label}</b>. They change your year straight away. Hit the targets to win the bonuses!` };
     },
   },
-  ...DECISIONS,
+  // The surprise event lands halfway through the year, after marketing
+  ...DECISIONS.slice(0, DECISIONS.findIndex(d => d.key === "marketing") + 1),
+  {
+    key: "response", icon: "📰", isEvent: true,
+    title: s => `📰 Month 6: ${call(EVENT_TEXT[s.event].title, s)}`,
+    desc: s => call(EVENT_TEXT[s.event].text, s),
+    options: s => Object.entries(EVENT_TEXT[s.event].responses).map(([id, o]) => ({ id, ...o })),
+  },
+  ...DECISIONS.slice(DECISIONS.findIndex(d => d.key === "marketing") + 1),
 ];
 const activeSteps = () => STEPS.filter(st => !st.when || st.when(state));
+const optionsOf = st => call(st.options, state);
 
 function feedbackFor(st, opt, r) {
   const fb = call(st.fb, state, r) || call(opt.fb, state, r);
@@ -49,7 +58,7 @@ let feedbackShownAt = 0;
 const $ = id => document.getElementById(id);
 
 function picks() {
-  const p = {};
+  const p = state.event ? { event: state.event } : {};
   activeSteps().forEach(st => { if (state[st.key] && !(st.pickCount && state[st.key].length < st.pickCount)) p[st.key] = state[st.key]; });
   return p;
 }
@@ -73,13 +82,13 @@ function startGame() {
 
 function renderSteps() {
   $("steps").innerHTML = activeSteps().map((st, i) =>
-    `<li class="${i < step ? "done" : i === step ? "now" : ""}" title="${st.title}">${i < step ? stepEmoji(i) : st.icon}</li>`
+    `<li class="${i < step ? "done" : i === step ? "now" : ""}" title="${st.isEvent ? "Surprise!" : esc(st.title)}">${i < step ? stepEmoji(i) : st.icon}</li>`
   ).join("");
 }
 function stepEmoji(i) {
   const st = activeSteps()[i];
   const chosen = [].concat(state[st.key])[0];
-  const opt = st.options.find(o => o.id === chosen);
+  const opt = optionsOf(st).find(o => o.id === chosen);
   return opt ? opt.emoji : st.icon;
 }
 
@@ -87,20 +96,25 @@ function renderStep() {
   renderSteps();
   const st = activeSteps()[step];
   if (st.pickCount) state[st.key] = [];
+  if (st.isEvent && !state.event) state.event = pick(eventsFor(picks()));
   $("qStep").textContent = st.pickCount ? `Pick ${st.pickCount} · step ${step + 1} of ${activeSteps().length}` : `Decision ${step + 1} of ${activeSteps().length}`;
-  $("qTitle").textContent = st.title;
+  $("qTitle").textContent = call(st.title, state);
+  $("qDesc").textContent = st.desc ? call(st.desc, state) : "";
+  $("question").classList.toggle("event-q", Boolean(st.isEvent));
+  if (st.isEvent) showEvent();
   const opts = $("options");
   opts.classList.remove("locked");
   opts.innerHTML = "";
-  opts.classList.toggle("many", st.options.length > 3);
-  opts.classList.toggle("lots", st.options.length > 8);
+  const list = optionsOf(st);
+  opts.classList.toggle("many", list.length > 3);
+  opts.classList.toggle("lots", list.length > 8);
   opts.classList.toggle("multi", Boolean(st.pickCount));
-  st.options.forEach(o => {
+  list.forEach(o => {
     const b = document.createElement("button");
     b.className = "opt";
     b.style.setProperty("--i", opts.children.length);
     const sub = call(o.sub, state);
-    b.innerHTML = `<span class="o-emoji">${o.emoji}</span><span class="o-text"><span class="o-label">${o.label}</span><span class="o-sub">${sub}</span></span>`;
+    b.innerHTML = `<span class="o-emoji">${o.emoji}</span><span class="o-text"><span class="o-label">${call(o.label, state)}</span><span class="o-sub">${sub}</span></span>`;
     b.addEventListener("click", () => choose(o, b));
     opts.appendChild(b);
   });
@@ -314,6 +328,10 @@ function finish() {
   const r = simulate(picks());
   const stars = starRating(r.profit);
   $("panel").classList.add("done");
+  // The meters showed changes step by step; at the end just show the final numbers
+  updateMeters(r);
+  document.querySelectorAll(".m-val").forEach(v => v.classList.remove("up", "down"));
+  $("mProfit").querySelector(".m-val").classList.toggle("down", r.profit < 0);
 
   $("rName").textContent = state.name + " · Year 1";
   countUp($("rProfit"), r.profit);
@@ -323,7 +341,7 @@ function finish() {
   $("rTitle").textContent = ["", "Back to the drawing board 😬", "Just about surviving 😅", "Solid start 👍", "Rising star 🌟", "Business tycoon 🤑"][stars];
 
   // Money in vs money out, scaled to whichever is bigger
-  const moneyIn = r.revenue + r.bonus;
+  const moneyIn = r.revenue + r.eventCash + r.bonus;
   const scale = Math.max(moneyIn, r.totalCosts) || 1;
   const parts = [
     ["Stock", r.costs.stock, "#f97316"],
@@ -333,6 +351,7 @@ function finish() {
     ["Shipping", r.costs.shipping, "#14b8a6"],
     ["Fees & extras", r.costs.fees, "#eab308"],
     ["Set-up", r.costs.setup, "#94a3b8"],
+    ["Surprise event", r.costs.event, "#ef4444"],
   ].filter(x => x[1] > 0);
   $("barIn").style.width = "0";
   $("barBonus").style.width = "0";
@@ -341,13 +360,15 @@ function finish() {
   $("valOut").textContent = money(r.totalCosts);
   $("legend").innerHTML = `<span style="--c:#15803d">Sales ${money(r.revenue)}</span>` +
     (r.bonus ? `<span style="--c:#ffc814">Goal bonuses ${money(r.bonus)}</span>` : "") +
+    (r.eventCash ? `<span style="--c:#86efac">Event money ${money(r.eventCash)}</span>` : "") +
     parts.map(([n, v, c]) => `<span style="--c:${c}">${n} ${money(v)}</span>`).join("");
   requestAnimationFrame(() => requestAnimationFrame(() => {
     $("barIn").style.width = (100 * r.revenue) / scale + "%";
-    $("barBonus").style.width = (100 * r.bonus) / scale + "%";
+    $("barBonus").style.width = (100 * (r.bonus + r.eventCash)) / scale + "%";
     $("barOut").querySelectorAll("i").forEach(i => (i.style.width = i.dataset.w + "%"));
   }));
 
+  renderEvent(r);
   renderGoals(r);
   renderImpact(r);
   $("lessons").innerHTML = lessons(r).map(([e, t], i) =>
@@ -403,6 +424,26 @@ function renderServerBoard(el, data) {
   const me = data.entry ? data.entry.id : null;
   el.innerHTML = `<h3>🏆 Tonight's top businesses${me ? ` · you came #${data.rank} of ${data.total}` : ""}</h3><ol>` +
     data.top.map(s => `<li class="${s.id === me ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${esc(s.name)}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
+}
+
+// ---- Surprise event ----
+// Show it on the shop scene and update the meters with the hit, before the player reacts
+function showEvent() {
+  const t = EVENT_TEXT[state.event];
+  $("eventBadge").innerHTML = `<span>${t.emoji}</span><b>${esc(call(t.title, state))}</b>`;
+  $("eventBadge").classList.add("show");
+  updateMeters(simulate(picks()));
+}
+function renderEvent(r) {
+  const t = EVENT_TEXT[state.event];
+  const resp = t.responses[state.response];
+  const worth = r.profit - simulate(picks(), { response: null }).profit;
+  const verdict = Math.abs(worth) < 50 ? "It made almost no difference to your profit."
+    : worth > 0 ? `That reaction made you <b>${money(worth)}</b> more than doing nothing.`
+    : `That reaction cost you <b>${money(-worth)}</b> compared with doing nothing.`;
+  $("eventCard").innerHTML = `<h3>📰 Your surprise: ${t.emoji} ${esc(call(t.title, state))}</h3>
+    <p>You chose: <b>${resp.emoji} ${esc(call(resp.label, state))}</b>. ${verdict}</p>`;
+  $("eventCard").className = "event-card " + (worth > 50 ? "good" : worth < -50 ? "bad" : "");
 }
 
 // ---- Goals: did they hit the targets? ----

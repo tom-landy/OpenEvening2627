@@ -209,3 +209,164 @@ const DECISIONS = [
     ],
   },
 ];
+
+// ---- Surprise events (numbers in EVENTS in model.js) ----
+// text and labels can be functions of the game state so they fit the business.
+const productName = s => PRODUCTS[s.product].name.toLowerCase();
+const EVENT_TEXT = {
+  heatwave: {
+    emoji: "☀️", title: "Heatwave!",
+    text: s => ["bubble", "icecream"].includes(s.product)
+      ? "A three-month heatwave hits. Everyone wants something cold, and you can't keep up!"
+      : ["pizza", "burger"].includes(s.product)
+        ? "A three-month heatwave hits. Nobody wants hot food when it's 32°C outside."
+        : "A three-month heatwave hits. Everyone's at the beach instead of shopping.",
+    responses: {
+      machine: { emoji: "🧊", label: s => (["bubble", "icecream"].includes(s.product) ? "Rent a second machine" : "Rent a slushie machine"),
+        sub: "£1,500 for the summer, sell cold drinks too", fb: "Ice-cold drinks fly off the counter. Smart thinking!" },
+      beach: { emoji: "🏖️", label: "Pop-up stall at the beach", sub: "£800 to go where the people are", fb: "You followed the crowds to the beach. Sunburnt but busy!" },
+      hours: { emoji: "🌙", label: "Open evenings only", sub: "Save £300 a month on bills, lose some sales", fb: "Cooler evenings, lower bills. Not a bad plan." },
+      nothing: { emoji: "😎", label: "Wait for it to pass", sub: "Free, but you miss out", fb: "You sat it out. Other businesses made the most of the sunshine." },
+    },
+  },
+  supplier: {
+    emoji: "🏚️", title: "Your supplier goes bust!",
+    text: "Your main supplier has closed down. Stock is suddenly 30% dearer and you're running short.",
+    responses: {
+      local: { emoji: "📍", label: "Find a local supplier", sub: "A bit dearer than before, but reliable", fb: "A local firm steps in. Customers love the local story too." },
+      wholesale: { emoji: "🏬", label: "Buy from a wholesaler", sub: "Quick fix at a small mark-up", fb: "The wholesaler keeps your shelves full while you sort things out." },
+      makeit: { emoji: "🛠️", label: "Make it yourself for now", sub: "£1,200 of kit, much cheaper stock", fb: "You rolled up your sleeves and made it yourself. Cheaper and fresher!" },
+      raise: { emoji: "📈", label: "Raise prices to cover it", sub: "10% higher prices, some customers leave", fb: "Higher prices cover the cost, but some regulars grumble." },
+    },
+  },
+  viral: {
+    emoji: "📱", title: "You've gone viral!",
+    text: s => `A video about your ${productName(s)} gets a million views. For three months, everyone wants to visit!`,
+    responses: {
+      temps: { emoji: "👥", label: "Hire temporary staff", sub: "£900 a month to serve the crowds", fb: "Extra hands mean nobody waits too long. Fans are happy!" },
+      raise: { emoji: "💷", label: "Raise prices while it's hot", sub: "10% more per sale", fb: "Demand is high, so you charged more. A classic business move." },
+      merch: { emoji: "🧢", label: "Sell merch", sub: "£500 of caps and stickers, earns about £2,000", fb: "Caps and stickers sell out. Your brand is everywhere!" },
+      nothing: { emoji: "🤷", label: "Carry on as normal", sub: "Free, but queues get long", fb: "Long queues and grumpy fans. Some never come back." },
+    },
+  },
+  badreview: {
+    emoji: "⭐", title: "A one-star review goes viral",
+    text: "A furious one-star review is shared thousands of times. Customers are staying away.",
+    responses: {
+      apology: { emoji: "🙏", label: "Say sorry with vouchers", sub: "£600 of free vouchers", fb: "A public apology and a voucher win most people back." },
+      invite: { emoji: "☕", label: "Invite the reviewer back", sub: "£100 for a free visit, on camera", fb: "They came back, loved it, and posted a five-star update!" },
+      argue: { emoji: "😤", label: "Reply and argue back", sub: "Free! Tell them they're wrong", fb: "Arguing online made it ten times worse. Ouch." },
+      nothing: { emoji: "🙈", label: "Ignore it", sub: "Free, hope it blows over", fb: "It blew over eventually, but you lost customers for months." },
+    },
+  },
+  energy: {
+    emoji: "⚡", title: "Energy bills double!",
+    text: "Electricity and gas prices double for six months. That's an extra £400 a month.",
+    responses: {
+      led: { emoji: "💡", label: "Fit LED lights and efficient kit", sub: "£1,200 now, saves £250 a month", fb: "New kit cuts your bills, and keeps saving next year too." },
+      pass: { emoji: "🏷️", label: "Put prices up a little", sub: "5% higher prices", fb: "A small price rise covers it. Most customers don't notice." },
+      hours: { emoji: "⏰", label: "Open shorter hours", sub: "Saves £200 a month, serve fewer people", fb: "Shorter hours save energy, but you serve fewer customers." },
+      nothing: { emoji: "😬", label: "Just pay it", sub: "Costs £2,400 over six months", fb: "You paid up. Ouch, but at least nothing else changed." },
+    },
+  },
+  roadworks: {
+    emoji: "🚧", title: "Roadworks outside!",
+    text: "The council digs up the road outside for three months. Hardly anyone can get to you.",
+    responses: {
+      delivery: { emoji: "🛵", label: "Start delivering", sub: "£250 a month for a delivery app", fb: "If they can't come to you, you go to them!" },
+      signs: { emoji: "🪧", label: "Big 'Still open!' signs and offers", sub: "£300", fb: "Bright signs and a deal tempt people across the barriers." },
+      popup: { emoji: "⛺", label: "Pop-up stall somewhere else", sub: "£700 to set up nearby", fb: "You moved to where the people are. Business keeps going!" },
+      nothing: { emoji: "😩", label: "Wait it out", sub: "Free, but three quiet months", fb: "Three very quiet months. You'll be glad when it's over." },
+    },
+  },
+  hacked: {
+    emoji: "💻", title: "Your website is hacked!",
+    text: "Hackers take your website down. For two months, half your orders vanish.",
+    responses: {
+      expert: { emoji: "🧑‍💻", label: "Pay a security expert", sub: "£1,200, fixed in days", fb: "The expert fixed it fast and made it safer than before." },
+      diy: { emoji: "🔧", label: "Fix it yourself", sub: "Free, but it takes your time", fb: "You got it working, but it took ages and orders piled up." },
+      platform: { emoji: "🛒", label: "Move to a big shopping platform", sub: "£200 a month in fees", fb: "A big platform is safer and brings new shoppers too." },
+      nothing: { emoji: "🙈", label: "Hope it fixes itself", sub: "Free", fb: "It didn't fix itself. Customers worry about their card details." },
+    },
+  },
+  sick: {
+    emoji: "🤒", title: s => (s.staff === "solo" ? "You're ill!" : "Your best worker is off sick"),
+    text: s => (s.staff === "solo" ? "You're stuck in bed for two months. Who's running the business?" : "Your best worker is off for two months. Everyone else is stretched."),
+    responses: {
+      agency: { emoji: "🧑‍🔧", label: "Hire agency staff", sub: "£1,100 a month, fully covered", fb: "Agency staff keep things running smoothly. Pricey, but reliable." },
+      family: { emoji: "👵", label: "Ask family to help", sub: "Free, but a bit chaotic", fb: "Grandma's back on the till! Cheap, cheerful and a bit chaotic." },
+      smaller: { emoji: "📋", label: "Sell a smaller range", sub: "Easier to run, fewer sales", fb: "A shorter menu is easier to manage with fewer people." },
+      nothing: { emoji: "😓", label: "Struggle on", sub: "Free, but service suffers", fb: "Long waits and mistakes. Customers notice." },
+    },
+  },
+  bigorder: {
+    emoji: "📦", title: "A huge order comes in!",
+    text: s => `A local company wants a massive order of ${productName(s)} for an event.`,
+    responses: {
+      accept: { emoji: "🤝", label: "Accept it", sub: "Big one-off profit, normal customers wait a bit", fb: "Delivered on time. That's a nice chunk of cash!" },
+      rush: { emoji: "🏃", label: "Accept and rush it", sub: "Squeeze in even more, quality slips", fb: "You took on extra, but rushed work earned some complaints." },
+      contract: { emoji: "📝", label: "Offer a discount for a regular deal", sub: "Less now, steady orders all year", fb: "They're now a regular customer. Steady money all year!" },
+      decline: { emoji: "🙅", label: "Turn it down", sub: "Keep things simple", fb: "You stayed focused, but left money on the table." },
+    },
+  },
+  chain: {
+    emoji: "🏢", title: "A big chain moves in",
+    text: s => `A national chain starts selling ${productName(s)} for less. Some of your customers drift away.`,
+    responses: {
+      match: { emoji: "🏷️", label: "Match their prices", sub: "10% lower prices", fb: "You matched them, but you can't beat a giant on price." },
+      story: { emoji: "❤️", label: "Shout about being local and independent", sub: "£800 campaign", fb: "People love backing a local business over a big chain!" },
+      range: { emoji: "🆕", label: "Launch something they don't sell", sub: "£1,500 to stand out", fb: "Your new range gives people a reason to choose you." },
+      nothing: { emoji: "🤞", label: "Carry on", sub: "Free", fb: "Some customers left for the chain and didn't come back." },
+    },
+  },
+  festival: {
+    emoji: "🎪", title: "A festival comes to town!",
+    text: "A big music festival is coming for a month. Thousands of visitors!",
+    responses: {
+      stall: { emoji: "🎟️", label: "Run a stall at the festival", sub: "£600 pitch", fb: "Your festival stall is packed. What a month!" },
+      sponsor: { emoji: "📣", label: "Sponsor the main stage", sub: "£1,000, your name everywhere", fb: "Your name is on the main stage. Everyone knows you now." },
+      hours: { emoji: "🌙", label: "Open late", sub: "£400 extra in wages, serve more", fb: "Late-night festival crowds keep you busy." },
+      nothing: { emoji: "🎧", label: "Business as usual", sub: "Free", fb: "A few festival-goers wander in, but you missed a trick." },
+    },
+  },
+  inflation: {
+    emoji: "📈", title: "Prices are rising",
+    text: "Inflation hits: your stock costs 15% more for the next six months.",
+    responses: {
+      raise: { emoji: "💷", label: "Raise your prices", sub: "8% higher prices", fb: "Everyone's raising prices, so most customers understand." },
+      shrink: { emoji: "🤏", label: "Make portions smaller", sub: "Same price, less product", fb: "Customers spotted the 'shrinkflation' and they're not happy." },
+      switch: { emoji: "🔄", label: "Switch to cheaper stock", sub: "Saves money, quality dips", fb: "Cheaper stock saves money, but a few regulars notice." },
+      nothing: { emoji: "😬", label: "Absorb the cost", sub: "Keep prices the same", fb: "You kept prices steady. Customers are pleased, your profit isn't." },
+    },
+  },
+  celebrity: {
+    emoji: "🌟", title: "A celebrity drops by!",
+    text: s => `A famous footballer is spotted buying your ${productName(s)}. Everyone's talking about you!`,
+    responses: {
+      post: { emoji: "📸", label: "Post the photo everywhere", sub: "Free", fb: "The photo gets thousands of likes. Free advertising!" },
+      special: { emoji: "⚽", label: "Name a product after them", sub: "£200 to launch", fb: "Fans are queuing for the special edition!" },
+      advert: { emoji: "🎬", label: "Pay them for an advert", sub: "£1,500", fb: "A celebrity advert! Customers come from miles around." },
+      nothing: { emoji: "🤐", label: "Keep it low-key", sub: "Free", fb: "Classy, but you could have made more of it." },
+    },
+  },
+  flood: {
+    emoji: "🌧️", title: "Your shop floods!",
+    text: "A storm floods your storeroom. £2,500 of damage, and you're half closed for a month.",
+    responses: {
+      insurance: { emoji: "📄", label: "Claim on your insurance", sub: "Get £2,000 back", fb: "Insurance pays out. That's why businesses have it!" },
+      crowdfund: { emoji: "🤲", label: "Ask the community for help", sub: "Locals chip in about £1,200", fb: "The town rallied round to help you. What a community!" },
+      quickfix: { emoji: "🧹", label: "Pay for a quick clean-up", sub: "£400, reopen fast", fb: "A quick clean-up gets you trading again in days." },
+      nothing: { emoji: "😞", label: "Cope as best you can", sub: "Free", fb: "A tough month. You got through it, just about." },
+    },
+  },
+  costliving: {
+    emoji: "👛", title: "Money is tight for everyone",
+    text: "A cost-of-living crisis means customers have less to spend for six months.",
+    responses: {
+      value: { emoji: "🏷️", label: "Launch a budget range", sub: "10% cheaper, more customers", fb: "A budget range keeps customers coming, but you earn less on each sale." },
+      deals: { emoji: "🎁", label: "Meal deals and bundles", sub: "£300 to set up", fb: "Bundles make customers feel they're getting a bargain." },
+      premium: { emoji: "💎", label: "Go upmarket", sub: "10% dearer, for people still spending", fb: "Some people are still spending, and they'll pay for quality." },
+      nothing: { emoji: "🤷", label: "Carry on", sub: "Free", fb: "Fewer customers through the door, but you got by." },
+    },
+  },
+};

@@ -1,6 +1,6 @@
 # Bexhill College Business Tycoon
 
-An open evening game for Business Studies. Students pick what to sell (12 products), name their business (tap a suggestion or type their own), pick 2 goals from 10 (each changes the year and pays a bonus if the target is hit), then decide location, price, supplier (including making it themselves), staff, marketing, ethics and how to react to a rival. Online sellers also choose a courier. Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
+An open evening game for Business Studies. Students pick what to sell (12 products), name their business (tap a suggestion or type their own), pick 2 goals from 10 (each changes the year and pays a bonus if the target is hit), then decide location, price, supplier (including making it themselves), staff and marketing. Halfway through the year a surprise event hits (one of 15, picked to suit the business) and they choose how to respond; then ethics and how to react to a rival. Online sellers also choose a courier. Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
 
 A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, a pie chart of what people sold, what they chose at each step, the latest games, the choice that made the biggest difference, and star ratings along the bottom.
 
@@ -46,5 +46,6 @@ Game: http://localhost:3000 · Dashboard: http://localhost:3000/dashboard
 - Wording at the top of `public/game.js` (`CONFIG`): the subtitle, closing message, idle timeout, how long each feedback card stays up.
 - The questions, option names and feedback text: `public/options.js` (the game and the dashboard both read it). The product question is in `STEPS` in `public/game.js`.
 - Adding an option means adding it in `public/options.js` and giving it numbers under the same id in `public/model.js`.
+- Surprise events: wording in `EVENT_TEXT` in `public/options.js`, numbers in `EVENTS` in `public/model.js`. `node tools/sim.js` shows what each response is worth on average compared with doing nothing.
 - Goals: wording in `GOALS` in `public/options.js`, effects, targets and bonuses in `OBJECTIVES` in `public/model.js`.
 - Products, business names and all the numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play a million random games (takes a few seconds) and check the spread of star ratings and that no product is far ahead of the rest.

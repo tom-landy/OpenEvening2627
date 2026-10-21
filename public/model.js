@@ -119,6 +119,129 @@ const OBJECTIVES = fill({
   innovate:  { oneOff: 2000, demand: 1.08, reward: 1500, target: c => c.rival === "newidea" || c.quality === "make" },
 }, { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0, reward: 0 });
 
+// ---- Surprise events, halfway through the year ----
+// One is drawn at random from those that fit the business; the player picks a
+// response. months: how long it lasts. In those months demand, capacity, price
+// and unit cost are multiplied, and monthly is an extra cost (negative saves).
+// oneOff is a cost, cash is money in, rep is added to reputation. Any of these
+// can be a function of the choices so one event can hit businesses differently.
+const COLD = ["bubble", "icecream"], HOT = ["pizza", "burger"];
+const isShop = c => c.location !== "online";
+const orderValue = c => 0.4 * PRODUCTS[c.product].demand * (PRODUCTS[c.product].prices.mid - PRODUCTS[c.product].unitCost);
+const EVENTS = {
+  heatwave: { months: 3, demand: c => (COLD.includes(c.product) ? 1.4 : HOT.includes(c.product) ? 0.7 : 0.9), responses: {
+    machine: { oneOff: 1500, demand: 1.2, capacity: 1.25 },
+    beach: { oneOff: 800, demand: 1.25 },
+    hours: { demand: 0.95, monthly: -300 },
+    nothing: {},
+  } },
+  supplier: { months: 6, unitCost: 1.3, capacity: 0.8, fits: c => c.quality !== "make", responses: {
+    local: { unitCost: 0.85, capacity: 1.25, rep: 0.25 },
+    wholesale: { unitCost: 0.92, capacity: 1.2 },
+    makeit: { oneOff: 1200, unitCost: 0.75, capacity: 1.1, rep: 0.25 },
+    raise: { price: 1.1, demand: 0.92 },
+  } },
+  viral: { months: 3, demand: 1.6, responses: {
+    temps: { monthly: 900, capacity: 1.5 },
+    raise: { price: 1.1, demand: 0.95 },
+    merch: { oneOff: 500, cash: 2000, rep: 0.25 },
+    nothing: { rep: -0.25 },
+  } },
+  badreview: { months: 6, demand: 0.85, rep: -1, responses: {
+    apology: { oneOff: 600, rep: 0.75, demand: 1.08 },
+    invite: { oneOff: 100, rep: 1, demand: 1.1 },
+    argue: { rep: -0.75, demand: 0.92 },
+    nothing: {},
+  } },
+  energy: { months: 6, monthly: 400, responses: {
+    led: { oneOff: 1200, monthly: -250 },
+    pass: { price: 1.05, demand: 0.96 },
+    hours: { monthly: -200, capacity: 0.85 },
+    nothing: {},
+  } },
+  roadworks: { months: 3, demand: 0.6, fits: isShop, responses: {
+    delivery: { monthly: 250, demand: 1.4 },
+    signs: { oneOff: 300, demand: 1.2 },
+    popup: { oneOff: 700, demand: 1.45 },
+    nothing: {},
+  } },
+  hacked: { months: 2, demand: 0.5, fits: c => !isShop(c), responses: {
+    expert: { oneOff: 1200, demand: 1.8 },
+    diy: { demand: 1.35, capacity: 0.9 },
+    platform: { monthly: 200, demand: 1.6 },
+    nothing: { rep: -0.25 },
+  } },
+  sick: { months: 2, capacity: 0.65, fits: c => c.staff !== "robots", responses: {
+    agency: { monthly: 1100, capacity: 1.45 },
+    family: { capacity: 1.25, rep: -0.1 },
+    smaller: { capacity: 1.2, demand: 0.93 },
+    nothing: { rep: -0.25 },
+  } },
+  bigorder: { months: 1, responses: {
+    accept: { cash: c => orderValue(c), capacity: 0.85 },
+    rush: { cash: c => 1.2 * orderValue(c), rep: -0.5 },
+    contract: { cash: c => 0.6 * orderValue(c), demand: c => 1 + 0.06 * 12 }, // 6% more customers for the rest of the year
+    decline: {},
+  } },
+  chain: { months: 6, demand: 0.8, responses: {
+    match: { price: 0.9, demand: 1.15 },
+    story: { oneOff: 800, demand: 1.15, rep: 0.25 },
+    range: { oneOff: 1500, demand: 1.22 },
+    nothing: {},
+  } },
+  festival: { months: 1, demand: 1.2, fits: isShop, responses: {
+    stall: { oneOff: 600, demand: 1.6 },
+    sponsor: { oneOff: 1000, rep: 0.75 },
+    hours: { monthly: 400, capacity: 1.4 },
+    nothing: {},
+  } },
+  inflation: { months: 6, unitCost: 1.15, responses: {
+    raise: { price: 1.08, demand: 0.95 },
+    shrink: { unitCost: 0.9, rep: -0.5 },
+    switch: { unitCost: 0.9, rep: -0.25 },
+    nothing: {},
+  } },
+  celebrity: { months: 2, demand: 1.3, rep: 0.5, responses: {
+    post: { demand: 1.15 },
+    special: { oneOff: 200, demand: 1.2 },
+    advert: { oneOff: 1500, demand: 1.4 },
+    nothing: {},
+  } },
+  flood: { months: 1, oneOff: 2500, capacity: 0.5, fits: isShop, responses: {
+    insurance: { cash: 2000 },
+    crowdfund: { cash: 1200, rep: 0.5 },
+    quickfix: { oneOff: 400, capacity: 1.6 },
+    nothing: {},
+  } },
+  costliving: { months: 6, demand: 0.85, responses: {
+    value: { price: 0.9, demand: 1.18 },
+    deals: { oneOff: 300, demand: 1.1, rep: 0.25 },
+    premium: { price: 1.1, demand: 0.92 },
+    nothing: {},
+  } },
+};
+
+// Events that make sense for these choices
+const eventsFor = c => Object.keys(EVENTS).filter(id => !EVENTS[id].fits || EVENTS[id].fits(c));
+
+// The event and response turned into whole-year numbers. response may be left
+// out to see the hit before reacting (and to work out what the reaction was worth).
+function eventEffect(c, response = c.response) {
+  const none = { demand: 1, capacity: 1, price: 1, unitCost: 1, rep: 0, cost: 0, cash: 0 };
+  const e = EVENTS[c.event];
+  if (!e) return none;
+  const r = (response && e.responses[response]) || {};
+  const val = (v, d) => (typeof v === "function" ? v(c) : v === undefined ? d : v);
+  const share = e.months / 12;
+  const blend = key => 1 + (val(e[key], 1) * val(r[key], 1) - 1) * share;
+  return {
+    demand: blend("demand"), capacity: blend("capacity"), price: blend("price"), unitCost: blend("unitCost"),
+    rep: val(e.rep, 0) + val(r.rep, 0),
+    cost: (val(e.monthly, 0) + val(r.monthly, 0)) * e.months + val(e.oneOff, 0) + val(r.oneOff, 0),
+    cash: val(r.cash, 0),
+  };
+}
+
 // ---- Long-term impact on the planet and the local area ----
 // Doesn't change profit directly (only through the green/community goals).
 // [planet, local, what it means]. Choices not listed are neutral.
@@ -235,7 +358,8 @@ const NEUTRAL_ETHICS = { extraUnit: 0, rep: 0, share: 0, wageFactor: 1, oneOff: 
 const NO_SHIPPING = { perOrder: 0, rep: 0, demand: 1, capacity: 1 };
 const NEUTRAL_RIVAL = { demand: 1, priceCut: 1, oneOff: 0, share: 0, rep: 0, monthly: 0 };
 
-function simulate(picked) {
+function simulate(picked, opts = {}) {
+  // opts.response overrides the event response (null = see the event before reacting)
   const c = Object.assign({}, DEFAULTS, picked);
   const p = PRODUCTS[c.product];
   const loc = LOCATIONS[c.location];
@@ -253,8 +377,10 @@ function simulate(picked) {
     monthly: a.monthly + o.monthly, price: a.price * o.price, wage: a.wage * o.wage, oneOff: a.oneOff + o.oneOff,
   }), { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0 });
 
+  const ev = eventEffect(c, opts.response);
+
   // Reputation out of 5, starts at 3
-  let rep = 3 + pr.rep + q.rep + st.rep + m.rep + eth.rep + rv.rep + sh.rep + g.rep;
+  let rep = 3 + pr.rep + q.rep + st.rep + m.rep + eth.rep + rv.rep + sh.rep + g.rep + ev.rep;
   const ripOff = (c.price === "high" || c.price === "luxury") && q.cheap;
   if (ripOff) rep -= 1.5;
   rep = Math.max(1, Math.min(5, rep));
@@ -264,13 +390,13 @@ function simulate(picked) {
   const priceDemand = q.posh && pr.premiumDemand ? pr.premiumDemand : pr.demand;
   const lift = 1 + (m.lift - 1) * loc.marketingBoost;
 
-  const demand = Math.round(p.demand * loc.footfall * priceDemand * q.demand * lift * repFactor * rv.demand * sh.demand * g.demand);
-  const capacity = Math.round(st.capacity * q.capacity * eth.capacity * sh.capacity);
+  const demand = Math.round(p.demand * loc.footfall * priceDemand * q.demand * lift * repFactor * rv.demand * sh.demand * g.demand * ev.demand);
+  const capacity = Math.round(st.capacity * q.capacity * eth.capacity * sh.capacity * ev.capacity);
   const customers = Math.min(demand, capacity);
   const turnedAway = Math.max(0, demand - capacity);
 
-  const price = p.prices[pr.of] * pr.mult * rv.priceCut * g.price;
-  const unitCost = p.unitCost * q.cost * g.unitCost + eth.extraUnit;
+  const price = p.prices[pr.of] * pr.mult * rv.priceCut * g.price * ev.price;
+  const unitCost = p.unitCost * q.cost * g.unitCost * ev.unitCost + eth.extraUnit;
   const basket = Math.max(1, 10 / p.prices.mid); // items per parcel
 
   const revenue = customers * price * 12;
@@ -282,10 +408,13 @@ function simulate(picked) {
     shipping: (customers / basket) * sh.perOrder * 12,
     fees: revenue * (loc.fee + eth.share + rv.share),
     setup: STARTUP_COST + eth.oneOff + rv.oneOff + q.oneOff + g.oneOff,
+    event: Math.max(0, ev.cost),
   };
+  // An event response that saves money (shorter hours, cheaper energy) counts as money in
+  const eventCash = ev.cash + Math.max(0, -ev.cost);
   const totalCosts = Object.values(costs).reduce((a, b) => a + b, 0);
   const impact = impactOf(c);
-  const before = { customers, rep, profit: revenue - totalCosts, impact };
+  const before = { customers, rep, profit: revenue + eventCash - totalCosts, impact };
 
   // Goal bonuses are judged on the year before any bonus is paid
   const goalResults = (c.objectives || []).filter(id => OBJECTIVES[id]).map(id => {
@@ -293,9 +422,9 @@ function simulate(picked) {
     return { id, hit, reward: hit ? OBJECTIVES[id].reward : 0 };
   });
   const bonus = goalResults.reduce((a, x) => a + x.reward, 0);
-  const profit = revenue + bonus - totalCosts;
+  const profit = revenue + eventCash + bonus - totalCosts;
 
-  return { customers, demand, capacity, turnedAway, rep, ripOff, price, unitCost, revenue, bonus, costs, totalCosts, profit, impact, goalResults, perOrder: sh.perOrder / basket };
+  return { customers, demand, capacity, turnedAway, rep, ripOff, price, unitCost, revenue, eventCash, bonus, costs, totalCosts, profit, impact, goalResults, perOrder: sh.perOrder / basket };
 }
 
 function starRating(profit) {
@@ -322,7 +451,10 @@ function validChoices(c) {
   const goals = Array.isArray(c.objectives) ? c.objectives : [];
   if (goals.length !== 2 || goals[0] === goals[1] || !goals.every(id => Object.prototype.hasOwnProperty.call(OBJECTIVES, id))) return null;
   out.objectives = [goals[0], goals[1]];
+  if (!eventsFor(out).includes(c.event) || !Object.prototype.hasOwnProperty.call(EVENTS[c.event].responses, c.response)) return null;
+  out.event = c.event;
+  out.response = c.response;
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, validChoices, impactOf, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, SHIPPING, OBJECTIVES };
+if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, validChoices, impactOf, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, SHIPPING, OBJECTIVES, EVENTS, eventsFor, eventEffect };

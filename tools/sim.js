@@ -26,9 +26,15 @@ for (let i = 0; i < N; i++) {
   let b = pick(goals);
   while (b === a) b = pick(goals);
   c.objectives = [a, b];
+  c.event = pick(M.eventsFor(c));
+  c.response = pick(Object.keys(M.EVENTS[c.event].responses));
   const r = M.simulate(c);
+  const worth = r.profit - M.simulate(c, { response: null }).profit;
+  add("event:" + c.event, r.profit);
+  add("response:" + c.event + "." + c.response, worth);
   stars[M.starRating(r.profit)]++;
   for (const k of names) if (k !== "shipping" || c.location === "online") add(k + ":" + c[k], r.profit);
+  if (!M.validChoices(c)) throw new Error("sim made an invalid game: " + JSON.stringify(c));
   for (const g of r.goalResults) { add("goal:" + g.id, r.profit); const h = (goalHits[g.id] = goalHits[g.id] || [0, 0]); h[0] += g.hit; h[1]++; }
   if (!best || r.profit > best.profit) best = { profit: r.profit, c };
   if (!worst || r.profit < worst.profit) worst = { profit: r.profit, c };
@@ -44,5 +50,6 @@ for (const k of Object.keys(sums)) {
   const [sum, n] = sums[k];
   const [group, id] = k.split(":");
   const hit = group === "goal" ? `  hit ${((100 * goalHits[id][0]) / goalHits[id][1]).toFixed(0)}%` : "";
-  console.log(group.padEnd(10), id.padEnd(11), "avg", fmt(sum / n) + hit);
+  const label = group === "response" ? "worth vs doing nothing" : "avg";
+  console.log(group.padEnd(10), id.padEnd(20), label, fmt(sum / n) + hit);
 }

@@ -278,3 +278,4 @@ h1 span { color: var(--accent); display: inline-block; animation: wobble 3s ease
   .options.lots { grid-template-columns: repeat(5, 1fr); }
   .options.many .opt { flex-direction: column; text-align: center; }
 }
+.options.many .opt:last-child:nth-child(odd) { grid-column: 1 / -1; }

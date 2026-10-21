@@ -36,6 +36,8 @@ let posts = []; // timestamps only, for a whole-site rate limit
 function record(body) {
   const c = body && body.choices;
   if (!c) return null;
+  // A game saved offline before a reset belongs to the old leaderboard
+  if (body.t && body.t < resetAt) return null;
   const choices = {};
   for (const [k, allowed] of Object.entries(CHOICES)) {
     if (!allowed.includes(c[k])) return null;
@@ -112,6 +114,11 @@ http.createServer((req, res) => {
       if (!entry) return send(res, 400, { error: "bad result" });
       send(res, 200, { entry, ...rankOf(entry) });
     });
+  }
+
+  if (url.pathname === "/api/top" && req.method === "GET") {
+    const sorted = [...results].sort((a, b) => b.profit - a.profit);
+    return send(res, 200, { resetAt, total: sorted.length, top: sorted.slice(0, 5) });
   }
 
   if (url.pathname === "/api/results" && req.method === "GET") {

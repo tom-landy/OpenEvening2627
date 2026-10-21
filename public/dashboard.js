@@ -167,10 +167,10 @@ function ago(t) {
 // ---- Reset for a new evening ----
 document.addEventListener("keydown", async e => {
   if (!(e.shiftKey && e.key === "R")) return;
-  const key = prompt("Admin key to clear all results (set as ADMIN_KEY on Render):");
+  const key = prompt("Clear ALL results for every screen?\n\nEnter the ADMIN_KEY (Render → your service → Environment):");
   if (!key) return;
   const res = await fetch("api/reset", { method: "POST", headers: { "x-admin-key": key } }).catch(() => null);
-  if (!res || !res.ok) { alert("Reset failed. Check the key."); return; }
+  if (!res || !res.ok) { alert(res && res.status === 403 ? "Wrong key, or no ADMIN_KEY is set on Render." : "Couldn't reach the server."); return; }
   const data = await res.json();
   store = { resetAt: data.resetAt, results: {} };
   saveCache();

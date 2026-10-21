@@ -14,6 +14,7 @@ const PRODUCTS = {
   tshirt:   { name: "Printed T-shirts", emoji: "👕", demand: 400, unitCost: 6,   prices: { low: 12, mid: 18, high: 28 },     colour: "#5fa8ff", sub: "Design it once, print it lots", staff: SHOP },
   gaming:   { name: "Gaming Café",     emoji: "🎮", demand: 1200, unitCost: 0.8, prices: { low: 3, mid: 5, high: 8 },        colour: "#8f7bff", sub: "Sell hours of play, not things", staff: SHOP, unit: "an hour" },
   plants:   { name: "House Plants",    emoji: "🪴", demand: 700,  unitCost: 4,   prices: { low: 7, mid: 11, high: 18 },      colour: "#6fd36f", sub: "Calm customers, careful stock", staff: SHOP },
+  resell:   { name: "Second-hand Reseller", emoji: "👚", demand: 580, unitCost: 5, prices: { low: 9, mid: 14, high: 22 },  colour: "#f4a6c8", sub: "Buy pre-loved clothes cheap, sell them on", staff: SHOP },
 };
 
 // Business names are picked at random from these lists, so players never type anything.
@@ -28,6 +29,7 @@ const NAMES = {
   tshirt:   ["Tee-rific", "Fresh Prints", "Cotton On", "Top Notch", "Print Club"],
   gaming:   ["Level Up", "Press Start", "Game On", "Pixel Palace", "Respawn"],
   plants:   ["Leaf It Out", "Grow For It", "Plant Party", "Pot Luck", "Fern Gully"],
+  resell:   ["Second Wind", "Thrift Shift", "Pre-Loved Club", "Rewear Room", "Vintage Vault"],
 };
 
 // Every option, with the defaults filled in, so simulate() never needs special cases.

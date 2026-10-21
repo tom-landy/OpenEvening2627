@@ -330,8 +330,10 @@ async function flushPending() {
   flushing = false;
 }
 function renderServerBoard(el, data) {
-  el.innerHTML = `<h3>🏆 Tonight's top businesses · you came #${data.rank} of ${data.total}</h3><ol>` +
-    data.top.map(s => `<li class="${s.id === data.entry.id ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${s.name}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
+  if (!data.top.length) { el.innerHTML = ""; return; }
+  const me = data.entry ? data.entry.id : null;
+  el.innerHTML = `<h3>🏆 Tonight's top businesses${me ? ` · you came #${data.rank} of ${data.total}` : ""}</h3><ol>` +
+    data.top.map(s => `<li class="${s.id === me ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${s.name}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
 }
 
 function lessons(r) {
@@ -364,7 +366,30 @@ function countUp(el, target) {
   })(start);
 }
 
-// ---- Leaderboard (stored on this device only, resets each day) ----
+// ---- Start screen leaderboard: tonight's from the server, this device's if offline ----
+const RESET_KEY = "beTheBoss.resetAt";
+async function showStartBoard() {
+  try {
+    const res = await fetch("api/top", { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    forgetBefore(data.resetAt);
+    renderServerBoard($("startBoard"), data);
+  } catch {
+    renderBoard($("startBoard"));
+  }
+}
+// After a reset, drop this device's old scores and unsent games too
+function forgetBefore(resetAt) {
+  try {
+    if (!resetAt || resetAt <= Number(localStorage.getItem(RESET_KEY) || 0)) return;
+    localStorage.setItem(RESET_KEY, String(resetAt));
+    localStorage.setItem(BOARD_KEY, JSON.stringify(todayScores().filter(s => s.t > resetAt)));
+    savePending(loadPending().filter(p => p.t > resetAt));
+  } catch { }
+}
+
+// ---- Fallback leaderboard (stored on this device only, resets each day) ----
 const BOARD_KEY = "beTheBoss.scores";
 function todayScores() {
   try {
@@ -401,7 +426,7 @@ function goHome() {
   clearTimeout(feedbackTimer);
   $("feedback").classList.remove("show");
   $("question").classList.remove("answered");
-  renderBoard($("startBoard"));
+  showStartBoard();
   show("start");
 }
 
@@ -413,6 +438,6 @@ $("againBtn").addEventListener("click", startGame);
 // Ignore a fast double-tap on an option landing on the card that replaces it
 $("feedback").addEventListener("click", () => { if (Date.now() - feedbackShownAt > 600) next(); });
 ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, resetIdle));
-renderBoard($("startBoard"));
+showStartBoard();
 flushPending();
 setInterval(flushPending, 60000);

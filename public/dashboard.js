@@ -1,5 +1,6 @@
 // Live results for a second screen. Polls the server every few seconds and keeps
-// its own copy on this device, so a server restart doesn't wipe the evening.
+// its own copy on this device. If the server restarts (and forgets everything),
+// the dashboard sends its copy back so no screen loses the evening.
 // The ☰ menu (top right) resets the evening and hides unsuitable names; both ask
 // for the ADMIN_KEY set on Render. Shortcuts: Shift+R, and Shift+click a name.
 
@@ -20,7 +21,7 @@ let shownIds = new Set();
 function loadCache() {
   try {
     const c = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
-    return { boot: c.boot, seq: c.seq, resetAt: c.resetAt || 0, results: c.results || {} };
+    return { boot: c.boot, seq: c.seq, resetAt: c.resetAt || 0, lastOk: c.lastOk || 0, results: c.results || {} };
   } catch { return { resetAt: 0, results: {} }; }
 }
 function saveCache() {
@@ -38,9 +39,14 @@ async function poll() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     if (data.boot !== lastBoot) {
-      // Server restarted: everything it has is new to us
+      // Server restarted and lost its memory: hand back what this screen saw,
+      // so every dashboard and game device agrees again, then fetch everything
+      // (only if this screen was live recently, so a tab left closed for hours
+      // can't bring back games from before a reset)
+      const restarted = Boolean(lastBoot) && Date.now() - store.lastOk < 10 * 60 * 1000;
       lastBoot = data.boot;
       lastSeq = 0;
+      if (restarted) await restore();
       if (after !== 0) return poll();
     }
     if (data.resetAt > store.resetAt) {
@@ -49,12 +55,23 @@ async function poll() {
     }
     data.results.forEach(r => (store.results[r.id] = r));
     lastSeq = data.seq;
+    store.lastOk = Date.now();
     saveCache();
     setStatus(true);
   } catch {
     setStatus(false);
   }
   render();
+}
+
+async function restore() {
+  const mine = current().map(({ id, t, name, choices }) => ({ id, t, name, choices }));
+  for (let i = 0; i < mine.length; i += 500) {
+    await fetch("api/restore", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ results: mine.slice(i, i + 500) }),
+    }).catch(() => null);
+  }
 }
 
 function setStatus(ok) {
@@ -228,7 +245,7 @@ async function resetBoard() {
   if (!confirm("Clear ALL results for every screen?\n\nThis can't be undone.")) return;
   const data = await adminPost("api/reset", "Reset the leaderboard");
   if (!data) return;
-  store = { resetAt: data.resetAt, results: {} };
+  store = { resetAt: data.resetAt, lastOk: Date.now(), results: {} };
   saveCache();
   render();
 }

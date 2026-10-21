@@ -31,10 +31,13 @@ const CHOICES = {
 let results = [];
 let resetAt = 0;
 let seq = 0; // order results arrived in, so dashboards can ask for just the new ones
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const BOOT = crypto.randomUUID(); // changes on restart, telling dashboards to re-fetch everything
 let posts = []; // timestamps only, for a whole-site rate limit
 
-function record(body) {
+// restoring: a dashboard is handing back a game this server lost in a restart,
+// so it keeps its original id and time
+function record(body, restoring = false) {
   const c = body && body.choices;
   if (!c) return null;
   // A game saved offline before a reset belongs to the old leaderboard
@@ -46,13 +49,16 @@ function record(body) {
   }
   // A typed name that fails the filter quietly becomes one of the ready-made ones
   const name = M.cleanName(body.name) || randomName(choices.product);
+  const maxAge = restoring ? KEEP_MS : 12 * 3600000;
+  const timeOk = body.t > Date.now() - maxAge && body.t <= Date.now();
+  if (restoring && (!timeOk || !UUID.test(body.id) || results.some(x => x.id === body.id))) return null;
   // Work the result out here rather than trusting numbers sent by the browser
   const r = M.simulate(choices);
   const entry = {
-    id: crypto.randomUUID(),
+    id: restoring ? body.id : crypto.randomUUID(),
     seq: ++seq,
     // A game finished while the server was unreachable is sent later with its own time
-    t: body.t > Date.now() - 12 * 3600000 && body.t <= Date.now() ? Math.round(body.t) : Date.now(),
+    t: timeOk ? Math.round(body.t) : Date.now(),
     name,
     choices,
     profit: Math.round(r.profit),
@@ -81,11 +87,11 @@ function send(res, code, data) {
   res.end(JSON.stringify(data));
 }
 
-function readBody(req, cb) {
+function readBody(req, cb, limit = 4000) {
   let data = "";
   req.on("data", chunk => {
     data += chunk;
-    if (data.length > 4000) req.destroy();
+    if (data.length > limit) req.destroy();
   });
   req.on("end", () => {
     try { cb(JSON.parse(data || "{}")); } catch { cb(null); }
@@ -121,6 +127,17 @@ http.createServer((req, res) => {
       if (!entry) return send(res, 400, { error: "bad result" });
       send(res, 200, { entry, ...rankOf(entry) });
     });
+  }
+
+  // After a restart, dashboards send back the games they saw so every screen agrees again
+  if (url.pathname === "/api/restore" && req.method === "POST") {
+    return readBody(req, body => {
+      const list = body && Array.isArray(body.results) ? body.results.slice(0, 500) : [];
+      let added = 0;
+      for (const r of list) if (record(r, true)) added++;
+      if (added) results.sort((a, b) => a.t - b.t);
+      send(res, 200, { added });
+    }, 400000);
   }
 
   if (url.pathname === "/api/top" && req.method === "GET") {

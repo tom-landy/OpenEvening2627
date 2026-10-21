@@ -317,6 +317,7 @@ function finish() {
     $("barOut").querySelectorAll("i").forEach(i => (i.style.width = i.dataset.w + "%"));
   }));
 
+  renderImpact(r.profit);
   $("lessons").innerHTML = lessons(r).map(([e, t], i) =>
     `<div class="lesson" style="animation-delay:${1.6 + i * 0.2}s"><span class="l-emoji">${e}</span><span>${t}</span></div>`
   ).join("");
@@ -370,6 +371,80 @@ function renderServerBoard(el, data) {
   const me = data.entry ? data.entry.id : null;
   el.innerHTML = `<h3>🏆 Tonight's top businesses${me ? ` · you came #${data.rank} of ${data.total}` : ""}</h3><ol>` +
     data.top.map(s => `<li class="${s.id === me ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${esc(s.name)}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
+}
+
+// ---- Long-term impact on the planet and the local area ----
+// Doesn't change profit; it shows what the choices mean beyond year one.
+// [planet, local, what it means]. Choices not listed are neutral.
+const IMPACT = {
+  location: {
+    market: [1, 2, "Your market stall brings shoppers into the town centre."],
+    college: [0, 1, null],
+    street: [0, 1, null],
+    van: [-1, 1, "Your van burns fuel driving between events."],
+    online: [-1, -1, "Online orders mean lots of delivery vans, and no shop in town."],
+  },
+  quality: {
+    bulk: [-2, -2, "Bulk stock shipped from abroad means transport pollution and no local jobs."],
+    budget: [-1, 0, "Cheap stock tends to be thrown away sooner."],
+    local: [1, 2, "Buying local keeps money and jobs in the area, with fewer miles travelled."],
+    fairtrade: [1, 0, "Fairtrade means the people who make your stock are paid fairly."],
+  },
+  staff: {
+    family: [0, 1, null],
+    part: [0, 1, null],
+    apprentice: [0, 2, "Your apprentice gets a start in their career, right here in town."],
+    team: [0, 2, "You created proper local jobs."],
+    robots: [0, -2, "Machines instead of people means fewer local jobs."],
+  },
+  marketing: {
+    flyers: [-1, 0, "Most flyers end up in the bin."],
+    billboard: [-1, 0, null],
+    samples: [0, 1, null],
+  },
+  ethics: {
+    plastic: [-2, -1, "Your plastic packaging ends up as litter and landfill."],
+    recycle: [2, 0, "Recyclable packaging keeps rubbish out of landfill."],
+    charity: [0, 2, "Your donations help a local charity all year round."],
+    wage: [0, 2, "Paying a real living wage helps local families."],
+    solar: [2, 0, "Solar panels cut your carbon footprint for years to come."],
+    volunteer: [0, 2, "Volunteering makes the whole town better off."],
+  },
+};
+
+function impact() {
+  let planet = 0, local = 0;
+  const notes = [];
+  for (const [key, table] of Object.entries(IMPACT)) {
+    const hit = table[state[key]];
+    if (!hit) continue;
+    planet += hit[0];
+    local += hit[1];
+    if (hit[2]) notes.push({ score: hit[0] + hit[1], text: hit[2] });
+  }
+  const rate = s => Math.max(1, Math.min(5, Math.round(3 + s / 2)));
+  notes.sort((a, b) => a.score - b.score);
+  const worst = notes.length && notes[0].score < 0 ? notes[0] : null;
+  const best = notes.length && notes[notes.length - 1].score > 0 ? notes[notes.length - 1] : null;
+  return { planet: rate(planet), local: rate(local), worst, best };
+}
+
+function renderImpact(profit) {
+  const im = impact();
+  const both = im.planet + im.local;
+  const outlook =
+    both >= 8 ? "Customers and the town love you. You're set up for a strong year two!" :
+    both <= 4 && profit > 0 ? "Profit now, problems later. Expect complaints, bad press and customers drifting away." :
+    both <= 4 ? "Losing money and hurting the area: time for a rethink." :
+    "Not bad! A few greener or more local choices would win you more loyal customers.";
+  const leaves = (n, on, off) => on.repeat(n) + `<i>${off.repeat(5 - n)}</i>`;
+  $("impact").innerHTML = `
+    <h3>🔮 Your long-term impact</h3>
+    <div class="im-row"><span>🌍 Planet</span><span class="im-score">${leaves(im.planet, "🌳", "🌳")}</span></div>
+    <div class="im-row"><span>🏘️ Local area</span><span class="im-score">${leaves(im.local, "🏠", "🏠")}</span></div>
+    ${im.best ? `<p class="im-note good">👍 ${im.best.text}</p>` : ""}
+    ${im.worst ? `<p class="im-note bad">👎 ${im.worst.text}</p>` : ""}
+    <p class="im-outlook">${outlook}</p>`;
 }
 
 function lessons(r) {

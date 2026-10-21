@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Be the Boss Live</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+</head>
+<body>
+  <header class="head">
+    <h1>Be the <span>Boss</span> · Live</h1>
+    <div class="status" id="status"><i></i><span>Connecting…</span></div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><span class="k-label">Businesses started</span><b id="kGames">0</b></div>
+    <div class="kpi"><span class="k-label">Average profit</span><b id="kAvg">£0</b></div>
+    <div class="kpi"><span class="k-label">Made a profit</span><b id="kWin">0%</b></div>
+    <div class="kpi"><span class="k-label">Best so far</span><b id="kBest">–</b><small id="kBestName"></small></div>
+  </section>
+
+  <main class="grid">
+    <section class="card top">
+      <h2>🏆 Top 10 tonight</h2>
+      <ol class="leader" id="leader"></ol>
+    </section>
+
+    <section class="card products">
+      <h2>🛍️ What people sold</h2>
+      <p class="hint">Bar = how many chose it · number = their average profit</p>
+      <div id="products"></div>
+    </section>
+
+    <section class="card choices">
+      <h2>🧠 What everyone chose</h2>
+      <div class="choice-grid" id="choices"></div>
+    </section>
+
+    <section class="card side">
+      <div class="insight" id="insight"></div>
+      <h2>⭐ Star ratings</h2>
+      <div class="stars" id="stars"></div>
+      <h2>🆕 Just finished</h2>
+      <ul class="feed" id="feed"></ul>
+    </section>
+  </main>
+
+  <aside class="play" id="play">
+    <div id="qr"></div>
+    <div><b>Play on your phone</b><span id="playUrl"></span></div>
+  </aside>
+
+  <div class="empty" id="empty">
+    <div>📊</div>
+    <p>Waiting for the first business…</p>
+    <small>Results appear here as soon as someone finishes a game.</small>
+  </div>
+
+  <script src="model.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

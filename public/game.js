@@ -6,14 +6,10 @@ const CONFIG = {
   feedbackSeconds: 4,     // how long each consequence card shows before moving on (tap skips)
 };
 
-const NAMES = {
-  bubble: ["Bubble Trouble", "Boba Bros", "Tea-riffic", "Pop & Sip", "Pearl Jam"],
-  burger: ["Bun Intended", "Patty Wagon", "Grill Seekers", "Burger Boss", "Stack Attack"],
-  phone:  ["Case Closed", "Cover Story", "Phone Home", "Snap Case", "Shell Shock"],
-};
 
 const money = n => (n < 0 ? "-£" : "£") + Math.abs(Math.round(n)).toLocaleString("en-GB");
-const pounds = n => "£" + n.toFixed(2);
+const pounds = n => "£" + (n >= 20 && n % 1 === 0 ? n : n.toFixed(2));
+const unit = s => PRODUCTS[s.product].unit || "each";
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
 // ---- The 8 decisions ----
@@ -22,11 +18,7 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const STEPS = [
   {
     key: "product", icon: "🛍️", title: "What will you sell?",
-    options: [
-      { id: "bubble", emoji: "🧋", label: "Bubble Tea", sub: "Cheap to make, loads of fans" },
-      { id: "burger", emoji: "🍔", label: "Burgers", sub: "Everyone's hungry, but ingredients cost more" },
-      { id: "phone",  emoji: "📱", label: "Phone Cases", sub: "Fewer buyers, but a big mark-up" },
-    ],
+    options: Object.entries(PRODUCTS).map(([id, p]) => ({ id, emoji: p.emoji, label: p.name, sub: p.sub })),
     feedback: (s) => ({ emoji: PRODUCTS[s.product].emoji, text: `Welcome to <b>${s.name}</b>! You've spent £5,000 setting up. Now let's find a home for it.` }),
   },
   {
@@ -45,9 +37,9 @@ const STEPS = [
   {
     key: "price", icon: "💷", title: "How much will you charge?",
     options: [
-      { id: "low",  emoji: "🏷️", label: "Bargain", sub: (s) => `${pounds(PRODUCTS[s.product].prices.low)} each. Crowds love a deal` },
-      { id: "mid",  emoji: "⚖️", label: "Fair price", sub: (s) => `${pounds(PRODUCTS[s.product].prices.mid)} each. Same as most places` },
-      { id: "high", emoji: "💎", label: "Premium", sub: (s) => `${pounds(PRODUCTS[s.product].prices.high)} each. Fewer buyers, more profit each` },
+      { id: "low",  emoji: "🏷️", label: "Bargain", sub: (s) => `${pounds(PRODUCTS[s.product].prices.low)} ${unit(s)}. Crowds love a deal` },
+      { id: "mid",  emoji: "⚖️", label: "Fair price", sub: (s) => `${pounds(PRODUCTS[s.product].prices.mid)} ${unit(s)}. Same as most places` },
+      { id: "high", emoji: "💎", label: "Premium", sub: (s) => `${pounds(PRODUCTS[s.product].prices.high)} ${unit(s)}. Fewer buyers, more profit each` },
     ],
     feedback: (s, r) => ({
       low:  { emoji: "🏷️", text: `Cheap! More customers, but you only keep ${pounds(r.price - r.unitCost)} from each sale.` },
@@ -177,15 +169,19 @@ function renderStep() {
   const opts = $("options");
   opts.classList.remove("locked");
   opts.innerHTML = "";
+  opts.classList.toggle("many", st.options.length > 3);
   st.options.forEach(o => {
     const b = document.createElement("button");
     b.className = "opt";
+    b.style.setProperty("--i", opts.children.length);
     const sub = typeof o.sub === "function" ? o.sub(state) : o.sub;
     b.innerHTML = `<span class="o-emoji">${o.emoji}</span><span class="o-text"><span class="o-label">${o.label}</span><span class="o-sub">${sub}</span></span>`;
     b.addEventListener("click", () => choose(o, b));
     opts.appendChild(b);
   });
   if (st.key === "rival") $("rival").classList.add("show");
+  // On phones the empty scene would push the 10 products off screen
+  document.querySelector(".play").classList.toggle("first", step === 0);
 }
 
 function choose(opt, btn) {
@@ -238,7 +234,7 @@ function resetMeters() {
 function updateMeters(r) {
   const prev = lastResult;
   setMeter("mCustomers", r.customers.toLocaleString("en-GB"), prev && r.customers - prev.customers);
-  $("mCustomers").querySelector(".bar i").style.width = Math.min(100, r.customers / 60) + "%";
+  $("mCustomers").querySelector(".bar i").style.width = Math.min(100, (50 * r.customers) / PRODUCTS[state.product].demand) + "%";
   $("mRep").querySelector(".m-val").textContent = starText(r.rep);
   setMeter("mProfit", money(r.profit), prev && r.profit - prev.profit);
   lastResult = r;
@@ -294,7 +290,7 @@ function updateScene(key, r) {
     $("goods").innerHTML = p.emoji.repeat(n) + (state.quality === "premium" ? '<span class="spark">✨</span>' : "");
   }
   if (key === "staff") {
-    const who = { solo: ["🧑‍🍳"], part: ["🧑‍🍳", "👩‍🍳"], team: ["🧑‍🍳", "👩‍🍳", "👨‍🍳"] }[state.staff];
+    const who = p.staff.slice(0, { solo: 1, part: 2, team: 3 }[state.staff]);
     $("staff").innerHTML = who.map(w => `<span>${w}</span>`).join("");
   }
   if (key === "marketing") {
@@ -319,7 +315,8 @@ function updateScene(key, r) {
 
 function renderQueue(r) {
   if (!state.location) return;
-  const n = Math.max(0, Math.min(12, Math.round(r.customers / 450)));
+  // Queue length is relative to how popular this product normally is
+  const n = Math.max(1, Math.min(12, Math.round((6 * r.customers) / PRODUCTS[state.product].demand)));
   const people = state.location === "online" ? ["📦"] : ["🧍", "🧍‍♀️", "🚶", "🧍‍♂️", "🚶‍♀️"];
   const q = $("queue");
   const have = q.children.length;
@@ -373,6 +370,50 @@ function finish() {
   const entry = { name: state.name, emoji: PRODUCTS[state.product].emoji, profit: Math.round(r.profit), t: Date.now() };
   saveScore(entry);
   renderBoard($("board"), entry);
+  sendResult({ choices: picks(), name: state.name, t: entry.t });
+}
+
+// ---- Sending results to the live dashboard ----
+// Only the 8 choices, the random business name and the time are sent.
+// Games that fail to send (wifi drop, server asleep) are kept and retried.
+const PENDING_KEY = "beTheBoss.pending";
+function loadPending() {
+  try { return JSON.parse(localStorage.getItem(PENDING_KEY) || "[]"); } catch { return []; }
+}
+function savePending(list) {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify(list.slice(-200))); } catch { }
+}
+async function post(result) {
+  const res = await fetch("api/results", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(result) });
+  if (res.status === 400) return { rejected: true };
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+async function sendResult(result) {
+  try {
+    const data = await post(result);
+    if (data.top) renderServerBoard($("board"), data);
+  } catch {
+    savePending([...loadPending(), result]);
+    return;
+  }
+  flushPending();
+}
+let flushing = false;
+async function flushPending() {
+  if (flushing) return;
+  flushing = true;
+  let list = loadPending();
+  while (list.length) {
+    try { await post(list[0]); } catch { break; }
+    list = list.slice(1);
+    savePending(list);
+  }
+  flushing = false;
+}
+function renderServerBoard(el, data) {
+  el.innerHTML = `<h3>🏆 Tonight's top businesses · you came #${data.rank} of ${data.total}</h3><ol>` +
+    data.top.map(s => `<li class="${s.id === data.entry.id ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${s.name}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
 }
 
 function lessons(r) {
@@ -451,3 +492,5 @@ $("againBtn").addEventListener("click", startGame);
 $("feedback").addEventListener("click", () => { if (Date.now() - feedbackShownAt > 600) next(); });
 ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, resetIdle));
 renderBoard($("startBoard"));
+flushPending();
+setInterval(flushPending, 60000);

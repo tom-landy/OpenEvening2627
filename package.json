@@ -1,0 +1,10 @@
+{
+  "name": "be-the-boss",
+  "private": true,
+  "description": "Open evening business decisions game with a live results dashboard",
+  "scripts": {
+    "start": "node server.js",
+    "sim": "node tools/sim.js"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,216 @@
+// Live results for a second screen. Polls the server every few seconds and keeps
+// its own copy on this device, so a server restart doesn't wipe the evening.
+// Shift+R resets the evening (asks for the ADMIN_KEY set on Render).
+
+const POLL_MS = 4000;
+const CACHE_KEY = "beTheBoss.dashboard";
+const KEEP_MS = 18 * 60 * 60 * 1000;
+
+// Kept in step with STEPS in game.js (minus the product step, which has its own chart)
+const DECISIONS = [
+  { key: "location", title: "Location", options: { street: ["🏙️", "High street"], college: ["🏫", "Next to college"], online: ["💻", "Online only"] } },
+  { key: "price", title: "Price", options: { low: ["🏷️", "Bargain"], mid: ["⚖️", "Fair"], high: ["💎", "Premium"] } },
+  { key: "quality", title: "Supplier", options: { budget: ["📦", "Budget"], standard: ["👍", "Standard"], premium: ["✨", "Premium"] } },
+  { key: "staff", title: "Staff", options: { solo: ["🙋", "Just me"], part: ["👯", "+ part-timer"], team: ["👨‍👩‍👧‍👦", "Full team"] } },
+  { key: "marketing", title: "Marketing", options: { none: ["💬", "Word of mouth"], social: ["📸", "Social media"], influencer: ["🤳", "Influencer"] } },
+  { key: "ethics", title: "Doing right", options: { plastic: ["🥤", "Plastic"], recycle: ["♻️", "Recyclable"], charity: ["💚", "Charity"] } },
+  { key: "rival", title: "vs the rival", options: { pricewar: ["🔥", "Price war"], newidea: ["🚀", "Something new"], loyalty: ["💳", "Loyalty cards"] } },
+];
+const PHRASE = {
+  location: { street: "set up on the high street", college: "set up next to a college", online: "went online only" },
+  price: { low: "charged bargain prices", mid: "charged a fair price", high: "charged premium prices" },
+  quality: { budget: "used a budget supplier", standard: "used a standard supplier", premium: "used a premium supplier" },
+  staff: { solo: "worked alone", part: "hired a part-timer", team: "hired a full team" },
+  marketing: { none: "relied on word of mouth", social: "used social media", influencer: "paid an influencer" },
+  ethics: { plastic: "used plastic packaging", recycle: "used recyclable packaging", charity: "gave to charity" },
+  rival: { pricewar: "started a price war", newidea: "launched something new", loyalty: "brought in loyalty cards" },
+};
+
+const $ = id => document.getElementById(id);
+const money = n => (n < 0 ? "-£" : "£") + Math.abs(Math.round(n)).toLocaleString("en-GB");
+const avg = list => (list.length ? list.reduce((a, x) => a + x.profit, 0) / list.length : 0);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let store = loadCache();
+let lastBoot = store.boot;
+let lastSeq = store.seq || 0;
+let shownIds = new Set();
+
+function loadCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+    return { boot: c.boot, seq: c.seq, resetAt: c.resetAt || 0, results: c.results || {} };
+  } catch { return { resetAt: 0, results: {} }; }
+}
+function saveCache() {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ...store, boot: lastBoot, seq: lastSeq })); } catch { }
+}
+function current() {
+  const cutoff = Math.max(Date.now() - KEEP_MS, store.resetAt);
+  return Object.values(store.results).filter(r => r.t > cutoff);
+}
+
+async function poll() {
+  try {
+    const after = lastBoot ? lastSeq : 0;
+    const res = await fetch(`api/results?after=${after}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (data.boot !== lastBoot) {
+      // Server restarted: everything it has is new to us
+      lastBoot = data.boot;
+      lastSeq = 0;
+      if (after !== 0) return poll();
+    }
+    if (data.resetAt > store.resetAt) {
+      store.resetAt = data.resetAt;
+      store.results = {};
+    }
+    data.results.forEach(r => (store.results[r.id] = r));
+    lastSeq = data.seq;
+    saveCache();
+    setStatus(true);
+  } catch {
+    setStatus(false);
+  }
+  render();
+}
+
+function setStatus(ok) {
+  $("status").className = "status " + (ok ? "ok" : "bad");
+  $("status").querySelector("span").textContent = ok ? "Live" : "Offline, showing saved results";
+}
+
+// ---- Rendering ----
+function render() {
+  const all = current();
+  $("empty").classList.toggle("show", all.length === 0);
+  const byProfit = [...all].sort((a, b) => b.profit - a.profit);
+
+  $("kGames").textContent = all.length.toLocaleString("en-GB");
+  $("kAvg").textContent = money(avg(all));
+  $("kWin").textContent = all.length ? Math.round((100 * all.filter(r => r.profit > 0).length) / all.length) + "%" : "0%";
+  $("kBest").textContent = byProfit[0] ? money(byProfit[0].profit) : "–";
+  $("kBestName").textContent = byProfit[0] ? `${PRODUCTS[byProfit[0].choices.product].emoji} ${byProfit[0].name}` : "";
+
+  $("leader").innerHTML = byProfit.slice(0, 10).map((r, i) => `
+    <li class="${shownIds.size && !shownIds.has(r.id) ? "new" : ""}">
+      <span class="rank">${["🥇", "🥈", "🥉"][i] || i + 1}</span>
+      <span class="who">${PRODUCTS[r.choices.product].emoji} ${esc(r.name)}</span>
+      <span class="st">${"★".repeat(r.stars)}</span>
+      <b class="${r.profit < 0 ? "neg" : ""}">${money(r.profit)}</b>
+    </li>`).join("");
+
+  renderProducts(all);
+  renderChoices(all);
+  renderStars(all);
+  renderInsight(all);
+
+  const latest = [...all].sort((a, b) => b.t - a.t).slice(0, 6);
+  $("feed").innerHTML = latest.map(r => `
+    <li class="${shownIds.size && !shownIds.has(r.id) ? "new" : ""}">
+      <span>${PRODUCTS[r.choices.product].emoji} ${esc(r.name)}</span>
+      <small>${ago(r.t)}</small>
+      <b class="${r.profit < 0 ? "neg" : ""}">${money(r.profit)}</b>
+    </li>`).join("");
+
+  shownIds = new Set(all.map(r => r.id));
+  if (!shownIds.size) shownIds = new Set(["none"]);
+}
+
+function renderProducts(all) {
+  const rows = Object.entries(PRODUCTS).map(([id, p]) => {
+    const list = all.filter(r => r.choices.product === id);
+    return { p, n: list.length, avg: avg(list) };
+  }).sort((a, b) => b.n - a.n || b.avg - a.avg);
+  const max = Math.max(1, ...rows.map(r => r.n));
+  $("products").innerHTML = rows.map(r => `
+    <div class="prow" title="${r.n} chose ${r.p.name}, average profit ${money(r.avg)}">
+      <span class="pe">${r.p.emoji}</span>
+      <span class="pn">${r.p.name}</span>
+      <div class="pbar"><i style="width:${(100 * r.n) / max}%"></i></div><em>${r.n}</em>
+      <b class="${r.avg < 0 ? "neg" : ""}">${r.n ? money(r.avg) : "–"}</b>
+    </div>`).join("");
+}
+
+function renderChoices(all) {
+  $("choices").innerHTML = DECISIONS.map(d => {
+    const rows = Object.entries(d.options).map(([id, [emoji, label]]) => {
+      const n = all.filter(r => r.choices[d.key] === id).length;
+      return { emoji, label, pct: all.length ? Math.round((100 * n) / all.length) : 0 };
+    });
+    // Bars are scaled to the most popular option so the winner is easy to spot
+    const top = Math.max(1, ...rows.map(r => r.pct));
+    return `<div class="choice"><h3>${d.title}</h3>` + rows.map(r => `
+      <div class="crow" title="${r.pct}% chose ${r.label}">
+        <span class="ce">${r.emoji}</span><span class="cl">${r.label}</span>
+        <div class="cbar"><i style="width:${(100 * r.pct) / top}%"></i></div><b>${r.pct}%</b>
+      </div>`).join("") + "</div>";
+  }).join("");
+}
+
+function renderStars(all) {
+  const counts = [1, 2, 3, 4, 5].map(s => all.filter(r => r.stars === s).length);
+  const max = Math.max(1, ...counts);
+  $("stars").innerHTML = counts.map((n, i) => `
+    <div class="srow" title="${n} businesses got ${i + 1} star${i ? "s" : ""}">
+      <span>${"★".repeat(i + 1)}</span><div class="sbar"><i style="width:${(100 * n) / max}%"></i></div><b>${n}</b>
+    </div>`).join("");
+}
+
+// The single choice that made the biggest difference to profit tonight
+function renderInsight(all) {
+  const el = $("insight");
+  if (all.length < 8) { el.innerHTML = ""; return; }
+  let best = null;
+  for (const d of DECISIONS) {
+    for (const id of Object.keys(d.options)) {
+      const yes = all.filter(r => r.choices[d.key] === id);
+      const no = all.filter(r => r.choices[d.key] !== id);
+      if (yes.length < 3 || no.length < 3) continue;
+      const diff = avg(yes) - avg(no);
+      if (!best || diff > best.diff) best = { diff, d, id };
+    }
+  }
+  if (!best || best.diff <= 0) { el.innerHTML = ""; return; }
+  el.innerHTML = `<span>💡 Tonight's big lesson</span>
+    <p>People who <b>${PHRASE[best.d.key][best.id]}</b> made <b>${money(best.diff)}</b> more on average.</p>`;
+}
+
+function ago(t) {
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.round(s / 60) + " min ago";
+  return Math.round(s / 3600) + " h ago";
+}
+
+// ---- QR code so people can play on their own phones ----
+function renderQR() {
+  const url = location.origin + "/";
+  $("playUrl").textContent = location.host;
+  try {
+    const qr = qrcode(0, "M");
+    qr.addData(url);
+    qr.make();
+    $("qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  } catch { $("play").style.display = "none"; }
+  if (location.protocol === "file:") $("play").style.display = "none";
+}
+
+// ---- Reset for a new evening ----
+document.addEventListener("keydown", async e => {
+  if (!(e.shiftKey && e.key === "R")) return;
+  const key = prompt("Admin key to clear all results (set as ADMIN_KEY on Render):");
+  if (!key) return;
+  const res = await fetch("api/reset", { method: "POST", headers: { "x-admin-key": key } }).catch(() => null);
+  if (!res || !res.ok) { alert("Reset failed. Check the key."); return; }
+  const data = await res.json();
+  store = { resetAt: data.resetAt, results: {} };
+  saveCache();
+  render();
+});
+
+renderQR();
+render();
+poll();
+setInterval(poll, POLL_MS);

@@ -1,10 +1,11 @@
 services:
   - type: web
     name: be-the-boss
-    runtime: static
+    runtime: node
+    plan: free
     buildCommand: echo "No build step"
-    staticPublishPath: ./public
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: no-cache
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: ADMIN_KEY
+        generateValue: true

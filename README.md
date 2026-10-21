@@ -1,34 +1,41 @@
 # Be the Boss
 
-An open evening game for Business Studies. Students make 8 decisions (product, location, price, supplier, staff, marketing, ethics, and how to react to a rival). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and a "tonight's top businesses" leaderboard.
+An open evening game for Business Studies. Students make 8 decisions (what to sell from 10 products, location, price, supplier, staff, marketing, ethics, and how to react to a rival). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
 
-Plain HTML, CSS and JavaScript. No build step, no server, no accounts.
+A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, what people sold, what they chose at each step, star ratings, the choice that made the biggest difference, and a QR code so visitors can play on their own phones.
+
+Plain HTML, CSS and JavaScript plus a small Node server with no dependencies.
+
+## Privacy
+
+Nobody types anything. Business names are picked at random from a list. The server stores only the 8 choices, the random business name and the time of each game. It does not store or log names, IP addresses, device details or cookies. Results are held in memory and dropped after 24 hours, or when you reset. (Render itself keeps standard request logs on its side, as any host does.)
 
 ## Run it locally
 
-Open `public/index.html` in a browser, or:
-
 ```
-cd public && python3 -m http.server 8000
+node server.js
 ```
 
-then go to http://localhost:8000.
+Game: http://localhost:3000 · Dashboard: http://localhost:3000/dashboard
 
 ## Put it on Render
 
-1. Push this repo to GitHub.
-2. In Render: **New + → Blueprint**, pick this repo. Render reads `render.yaml` and creates a free static site called `be-the-boss`.
-   (Or **New + → Static Site**, pick the repo, leave Build Command blank or `echo`, set Publish Directory to `public`.)
-3. Every push to the branch Render watches redeploys the site automatically.
+1. Push this repo to GitHub and merge into `main`.
+2. In Render: **New + → Blueprint**, pick this repo. Render reads `render.yaml` and creates a free web service called `be-the-boss` with a random `ADMIN_KEY`.
+   (Or **New + → Web Service**, pick the repo, Build Command `echo`, Start Command `node server.js`, and add an `ADMIN_KEY` environment variable.)
+3. Every push to `main` redeploys it automatically.
 
 ## On the night
 
-- The leaderboard is stored in each device's browser and resets every day. Run it on one laptop or iPad per table so the leaderboard builds up across the evening.
-- If nobody touches the screen for 90 seconds it goes back to the start screen.
-- Press F11 (Windows) or Ctrl+Cmd+F (Mac) for full screen. On an iPad, "Add to Home Screen" hides the browser bar.
+- **Open the dashboard on the big screen first**, about 10 minutes before doors open. Render's free plan puts the app to sleep after 15 minutes with no visitors and takes up to a minute to wake. The dashboard checks in every few seconds, so it keeps the app awake all evening.
+- Results live in the server's memory, so a restart or redeploy clears them on the server. The dashboard keeps its own copy in its browser, so the big screen keeps showing the whole evening anyway. Don't push changes during the event.
+- If the wifi drops, game devices save finished games and send them when the connection comes back.
+- **Reset before the event** to clear any test games: on the dashboard press **Shift+R** and enter the `ADMIN_KEY` (find it in Render → be-the-boss → Environment).
+- If nobody touches a game screen for 90 seconds it goes back to the start screen.
+- Full screen: F11 (Windows) or Ctrl+Cmd+F (Mac). On an iPad, "Add to Home Screen" hides the browser bar.
 
 ## Changing things
 
-- Wording at the top of `public/game.js` (`CONFIG`): the subtitle, the closing message, the idle timeout, how long each feedback card stays up.
-- The questions and the feedback text: `STEPS` in `public/game.js`.
-- The numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play all 6,561 possible games and check the spread of star ratings is still sensible (roughly a quarter of players should make a loss).
+- Wording at the top of `public/game.js` (`CONFIG`): the subtitle, closing message, idle timeout, how long each feedback card stays up.
+- The questions and feedback text: `STEPS` in `public/game.js`. If you change option names, update `DECISIONS` in `public/dashboard.js` to match.
+- Products, business names and all the numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play all 19,683 possible games and check the spread of star ratings and that no product is far ahead of the rest.

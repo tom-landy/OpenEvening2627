@@ -1,10 +1,33 @@
 // The business model behind the game. All numbers are per month unless noted.
 // Kept separate from the UI so it can be tuned (and tested with node sim.js).
 
+// unit: what one sale is. staff: who appears in the shop window.
+const FOOD = ["🧑‍🍳", "👩‍🍳", "👨‍🍳"], SHOP = ["🧑‍💼", "👩‍💼", "👨‍💼"];
 const PRODUCTS = {
-  bubble: { name: "Bubble Tea", emoji: "🧋", demand: 2800, unitCost: 1.2, prices: { low: 2.5, mid: 3.8, high: 5.5 }, colour: "#ff7eb6" },
-  burger: { name: "Burgers", emoji: "🍔", demand: 1800, unitCost: 2.8, prices: { low: 5, mid: 6.5, high: 9 }, colour: "#ffb347" },
-  phone:  { name: "Phone Cases", emoji: "📱", demand: 650, unitCost: 2, prices: { low: 5, mid: 9, high: 15 }, colour: "#7ec8ff" },
+  bubble:   { name: "Bubble Tea",      emoji: "🧋", demand: 2800, unitCost: 1.2, prices: { low: 2.5, mid: 3.8, high: 5.5 },  colour: "#ff7eb6", sub: "Cheap to make, loads of fans", staff: FOOD },
+  burger:   { name: "Burgers",         emoji: "🍔", demand: 1800, unitCost: 2.8, prices: { low: 5, mid: 6.5, high: 9 },      colour: "#ffb347", sub: "Everyone's hungry, pricey ingredients", staff: FOOD },
+  phone:    { name: "Phone Cases",     emoji: "📱", demand: 650,  unitCost: 2,   prices: { low: 5, mid: 9, high: 15 },       colour: "#7ec8ff", sub: "Fewer buyers, big mark-up", staff: SHOP },
+  pizza:    { name: "Pizza",           emoji: "🍕", demand: 950,  unitCost: 3,   prices: { low: 6, mid: 9, high: 13 },       colour: "#ff6b57", sub: "Big orders, hot ovens", staff: FOOD },
+  cupcake:  { name: "Cupcakes",        emoji: "🧁", demand: 2600, unitCost: 0.9, prices: { low: 2.2, mid: 3.4, high: 5 },      colour: "#c58cff", sub: "Small treats, sold by the dozen", staff: FOOD },
+  icecream: { name: "Ice Cream",       emoji: "🍦", demand: 2600, unitCost: 0.8, prices: { low: 2.2, mid: 3.2, high: 4.8 },  colour: "#7fe0d0", sub: "Everyone loves it, mostly in summer", staff: FOOD },
+  trainers: { name: "Custom Trainers", emoji: "👟", demand: 100,  unitCost: 35,  prices: { low: 60, mid: 85, high: 130 },    colour: "#ff9f43", sub: "Few sales, huge price tag", staff: SHOP },
+  tshirt:   { name: "Printed T-shirts", emoji: "👕", demand: 400, unitCost: 6,   prices: { low: 12, mid: 18, high: 28 },     colour: "#5fa8ff", sub: "Design it once, print it lots", staff: SHOP },
+  gaming:   { name: "Gaming Café",     emoji: "🎮", demand: 1200, unitCost: 0.8, prices: { low: 3, mid: 5, high: 8 },        colour: "#8f7bff", sub: "Sell hours of play, not things", staff: SHOP, unit: "an hour" },
+  plants:   { name: "House Plants",    emoji: "🪴", demand: 700,  unitCost: 4,   prices: { low: 7, mid: 11, high: 18 },      colour: "#6fd36f", sub: "Calm customers, careful stock", staff: SHOP },
+};
+
+// Business names are picked at random from these lists, so players never type anything.
+const NAMES = {
+  bubble:   ["Bubble Trouble", "Boba Bros", "Tea-riffic", "Pop & Sip", "Pearl Jam"],
+  burger:   ["Bun Intended", "Patty Wagon", "Grill Seekers", "Burger Boss", "Stack Attack"],
+  phone:    ["Case Closed", "Cover Story", "Phone Home", "Snap Case", "Shell Shock"],
+  pizza:    ["Slice Slice Baby", "Crust Me", "Dough Joe", "Cheesy Does It", "Pizza the Action"],
+  cupcake:  ["Cake My Day", "Frost Bite", "Whisk Takers", "Batter Up", "Sweet Spot"],
+  icecream: ["Scoop There It Is", "Brain Freeze", "Cone Zone", "Sundae Funday", "Chill Out"],
+  trainers: ["Sole Mates", "Kicks & Co", "Fresh Steps", "Lace Up", "Heel Good"],
+  tshirt:   ["Tee-rific", "Fresh Prints", "Cotton On", "Top Notch", "Print Club"],
+  gaming:   ["Level Up", "Press Start", "Game On", "Pixel Palace", "Respawn"],
+  plants:   ["Leaf It Out", "Grow For It", "Plant Party", "Pot Luck", "Fern Gully"],
 };
 
 const LOCATIONS = {
@@ -108,4 +131,4 @@ function starRating(profit) {
   return 5;
 }
 
-if (typeof module !== "undefined") module.exports = { simulate, starRating, PRODUCTS, LOCATIONS, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, PRICE_DEMAND };
+if (typeof module !== "undefined") module.exports = { simulate, starRating, NAMES, PRODUCTS, LOCATIONS, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, PRICE_DEMAND };

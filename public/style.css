@@ -85,6 +85,7 @@ h1 span { color: var(--accent); display: inline-block; animation: wobble 3s ease
   .m-val { font-size: 15px; }
   .m-val.stars { font-size: 12px; letter-spacing: 0; }
   .play { padding: 4px 12px 16px; }
+  .play.first .scene { display: none; }
 }
 
 /* ---------- PLAY LAYOUT ---------- */
@@ -258,3 +259,13 @@ h1 span { color: var(--accent); display: inline-block; animation: wobble 3s ease
 @keyframes popIn { from { transform: scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes starPop { 0% { transform: scale(0) rotate(-30deg); } 70% { transform: scale(1.3); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* product picker: 10 options, so smaller cards in two columns */
+.options.many { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.options.many .opt { flex-direction: row; text-align: left; gap: 10px; padding: 10px 12px; box-shadow: 0 4px 0 #c9c6e6; }
+.options.many .opt:nth-child(n) { animation-delay: calc(var(--i, 0) * 30ms); }
+.options.many .o-text { display: flex; flex-direction: column; }
+.options.many .o-emoji { font-size: 34px; }
+.options.many .o-label { font-size: 17px; line-height: 1.15; }
+.options.many .o-sub { font-size: 13px; }
+@media (min-width: 640px) and (max-width: 959px) { .options.many { grid-template-columns: repeat(5, 1fr); } .options.many .opt { flex-direction: column; text-align: center; } }

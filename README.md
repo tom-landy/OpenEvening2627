@@ -38,4 +38,4 @@ Game: http://localhost:3000 · Dashboard: http://localhost:3000/dashboard
 
 - Wording at the top of `public/game.js` (`CONFIG`): the subtitle, closing message, idle timeout, how long each feedback card stays up.
 - The questions and feedback text: `STEPS` in `public/game.js`. If you change option names, update `DECISIONS` in `public/dashboard.js` to match.
-- Products, business names and all the numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play all 19,683 possible games and check the spread of star ratings and that no product is far ahead of the rest.
+- Products, business names and all the numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play all 21,870 possible games and check the spread of star ratings and that no product is far ahead of the rest.

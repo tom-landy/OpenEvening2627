@@ -158,15 +158,23 @@ function renderProducts(all) {
     </li>`).join("");
 }
 
+// One column per decision, plus the goals. Shipping only counts online sellers.
+// Columns with more than 6 options show the 6 most popular so they line up.
 function renderChoices(all) {
-  $("choices").innerHTML = DECISIONS.map(d => {
-    const rows = d.options.map(o => {
-      const n = all.filter(r => r.choices[d.key] === o.id).length;
-      return { emoji: o.emoji, label: o.short, pct: all.length ? Math.round((100 * n) / all.length) : 0 };
-    });
+  const columns = DECISIONS.map(d => {
+    const pool = d.when ? all.filter(r => d.when(r.choices)) : all;
+    return { title: `${d.icon} ${d.name}`, pool, rows: d.options.map(o => ({ emoji: o.emoji, label: o.short, n: pool.filter(r => r.choices[d.key] === o.id).length })) };
+  });
+  columns.push({
+    title: "🎯 Goals", pool: all,
+    rows: GOALS.map(g => ({ emoji: g.emoji, label: g.short, n: all.filter(r => (r.choices.objectives || []).includes(g.id)).length })),
+  });
+  $("choices").innerHTML = columns.map(col => {
+    let rows = col.rows.map(r => ({ ...r, pct: col.pool.length ? Math.round((100 * r.n) / col.pool.length) : 0 }));
+    if (rows.length > 6) rows = [...rows].sort((a, b) => b.n - a.n).slice(0, 6);
     // Bars are scaled to the most popular option so the winner is easy to spot
     const top = Math.max(1, ...rows.map(r => r.pct));
-    return `<div class="choice"><h3>${d.icon} ${d.name}</h3>` + rows.map(r => `
+    return `<div class="choice"><h3>${col.title}</h3>` + rows.map(r => `
       <div class="crow" title="${r.pct}% chose ${r.label}">
         <span class="ce">${r.emoji}</span><span class="cl">${r.label}</span><b>${r.pct}%</b>
         <div class="cbar"><i style="width:${(100 * r.pct) / top}%"></i></div>
@@ -192,9 +200,10 @@ function renderInsight(all) {
   if (all.length < 8) { el.innerHTML = ""; return; }
   let best = null;
   for (const d of DECISIONS) {
+    const pool = d.when ? all.filter(r => d.when(r.choices)) : all;
     for (const o of d.options) {
-      const yes = all.filter(r => r.choices[d.key] === o.id);
-      const no = all.filter(r => r.choices[d.key] !== o.id);
+      const yes = pool.filter(r => r.choices[d.key] === o.id);
+      const no = pool.filter(r => r.choices[d.key] !== o.id);
       if (yes.length < 3 || no.length < 3) continue;
       const diff = avg(yes) - avg(no);
       if (!best || diff > best.diff) best = { diff, o };

@@ -12,16 +12,26 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const call = (v, ...args) => (typeof v === "function" ? v(...args) : v);
 
-// ---- The 8 decisions ----
-// Decisions 2 to 8 live in options.js so the dashboard can share their labels.
+// ---- The steps ----
+// Product, then 2 goals, then the decisions in options.js (shared with the
+// dashboard). A step with when() only appears if it applies, e.g. shipping.
 const STEPS = [
   {
     key: "product", icon: "🛍️", title: "What will you sell?",
     options: Object.entries(PRODUCTS).map(([id, p]) => ({ id, emoji: p.emoji, label: p.name, sub: p.sub })),
-    fb: s => `Welcome to <b>${esc(s.name)}</b>! You've spent £5,000 setting up. Now let's find a home for it.`,
+    fb: s => `Welcome to <b>${esc(s.name)}</b>! You've spent £5,000 setting up. Now pick your goals.`,
+  },
+  {
+    key: "objectives", icon: "🎯", title: "Pick 2 goals for your first year", pickCount: 2,
+    options: GOALS.map(g => ({ id: g.id, emoji: g.emoji, label: g.label, sub: `${g.effect}. <b>Hit it: ${g.reward}</b>` })),
+    fb: s => {
+      const [a, b] = s.objectives.map(id => GOALS.find(g => g.id === id));
+      return { emoji: "🎯", text: `Your goals: <b>${a.label}</b> and <b>${b.label}</b>. They change your year straight away. Hit the targets to win the bonuses!` };
+    },
   },
   ...DECISIONS,
 ];
+const activeSteps = () => STEPS.filter(st => !st.when || st.when(state));
 
 function feedbackFor(st, opt, r) {
   const fb = call(st.fb, state, r) || call(opt.fb, state, r);
@@ -40,7 +50,7 @@ const $ = id => document.getElementById(id);
 
 function picks() {
   const p = {};
-  STEPS.forEach(st => { if (state[st.key]) p[st.key] = state[st.key]; });
+  activeSteps().forEach(st => { if (state[st.key] && !(st.pickCount && state[st.key].length < st.pickCount)) p[st.key] = state[st.key]; });
   return p;
 }
 
@@ -62,26 +72,29 @@ function startGame() {
 }
 
 function renderSteps() {
-  $("steps").innerHTML = STEPS.map((st, i) =>
+  $("steps").innerHTML = activeSteps().map((st, i) =>
     `<li class="${i < step ? "done" : i === step ? "now" : ""}" title="${st.title}">${i < step ? stepEmoji(i) : st.icon}</li>`
   ).join("");
 }
 function stepEmoji(i) {
-  const st = STEPS[i];
-  const opt = st.options.find(o => o.id === state[st.key]);
+  const st = activeSteps()[i];
+  const chosen = [].concat(state[st.key])[0];
+  const opt = st.options.find(o => o.id === chosen);
   return opt ? opt.emoji : st.icon;
 }
 
 function renderStep() {
   renderSteps();
-  const st = STEPS[step];
-  $("qStep").textContent = `Decision ${step + 1} of ${STEPS.length}`;
+  const st = activeSteps()[step];
+  if (st.pickCount) state[st.key] = [];
+  $("qStep").textContent = st.pickCount ? `Pick ${st.pickCount} · step ${step + 1} of ${activeSteps().length}` : `Decision ${step + 1} of ${activeSteps().length}`;
   $("qTitle").textContent = st.title;
   const opts = $("options");
   opts.classList.remove("locked");
   opts.innerHTML = "";
   opts.classList.toggle("many", st.options.length > 3);
-  opts.classList.toggle("lots", st.options.length > 6);
+  opts.classList.toggle("lots", st.options.length > 8);
+  opts.classList.toggle("multi", Boolean(st.pickCount));
   st.options.forEach(o => {
     const b = document.createElement("button");
     b.className = "opt";
@@ -97,9 +110,19 @@ function renderStep() {
 }
 
 function choose(opt, btn) {
-  const st = STEPS[step];
-  state[st.key] = opt.id;
-  btn.classList.add("picked");
+  const st = activeSteps()[step];
+  if (st.pickCount) {
+    // Tap to pick, tap again to drop; moves on once enough are picked
+    const list = state[st.key];
+    const at = list.indexOf(opt.id);
+    if (at >= 0) list.splice(at, 1); else list.push(opt.id);
+    btn.classList.toggle("picked", at < 0);
+    $("qStep").textContent = `Picked ${list.length} of ${st.pickCount}`;
+    if (list.length < st.pickCount) return;
+  } else {
+    state[st.key] = opt.id;
+    btn.classList.add("picked");
+  }
   $("options").classList.add("locked");
 
   const r = simulate(picks());
@@ -166,7 +189,7 @@ function next() {
   $("feedback").classList.remove("show");
   $("question").classList.remove("answered");
   step++;
-  if (step < STEPS.length) renderStep();
+  if (step < activeSteps().length) renderStep();
   else finish();
 }
 
@@ -228,13 +251,14 @@ function updateScene(key, r) {
     $("backdrop").textContent = { street: "🏢🏬🏦🏨", mall: "🏬🛍️🏬", college: "🌳🏫🌳", market: "⛺🎪⛺", van: "🎡🎪🏟️", online: "📶🛰️📶" }[state.location];
     $("backdrop").classList.add("show");
   }
+  if (key === "shipping") $("queue").innerHTML = ""; // redraw the queue with the chosen courier
   if (key === "price") {
     $("pricetag").textContent = state.price === "pwyw" ? "You choose!" : pounds(r.price);
     $("pricetag").classList.add("show");
   }
   if (key === "quality") {
-    const n = { bulk: 1, budget: 1, standard: 2, local: 2, fairtrade: 2, premium: 3 }[state.quality];
-    const extra = { bulk: "🚢", local: "📍", fairtrade: "🌍", premium: "✨" }[state.quality];
+    const n = { bulk: 1, budget: 1, standard: 2, mix: 2, make: 3, local: 2, fairtrade: 2, premium: 3 }[state.quality];
+    const extra = { bulk: "🚢", mix: "🧰", make: "🛠️", local: "📍", fairtrade: "🌍", premium: "✨" }[state.quality];
     $("goods").innerHTML = p.emoji.repeat(n) + (extra ? `<span class="spark">${extra}</span>` : "");
   }
   if (key === "staff") {
@@ -271,7 +295,8 @@ function renderQueue(r) {
   if (!state.location) return;
   // Queue length is relative to how popular this product normally is
   const n = Math.max(1, Math.min(12, Math.round((6 * r.customers) / PRODUCTS[state.product].demand)));
-  const people = state.location === "online" ? ["📦"] : ["🧍", "🧍‍♀️", "🚶", "🧍‍♂️", "🚶‍♀️"];
+  const courier = { customer: "📦", budget: "🐌", tracked: "📮", express: "⚡", green: "🚲", myself: "🚗" }[state.shipping] || "📦";
+  const people = state.location === "online" ? ["📦", courier] : ["🧍", "🧍‍♀️", "🚶", "🧍‍♂️", "🚶‍♀️"];
   const q = $("queue");
   const have = q.children.length;
   if (n < have) { while (q.children.length > n) q.lastChild.remove(); return; }
@@ -298,26 +323,33 @@ function finish() {
   $("rTitle").textContent = ["", "Back to the drawing board 😬", "Just about surviving 😅", "Solid start 👍", "Rising star 🌟", "Business tycoon 🤑"][stars];
 
   // Money in vs money out, scaled to whichever is bigger
-  const scale = Math.max(r.revenue, r.totalCosts) || 1;
+  const moneyIn = r.revenue + r.bonus;
+  const scale = Math.max(moneyIn, r.totalCosts) || 1;
   const parts = [
     ["Stock", r.costs.stock, "#f97316"],
     ["Rent", r.costs.rent, "#a855f7"],
     ["Wages", r.costs.wages, "#3b82f6"],
     ["Marketing", r.costs.marketing, "#ec4899"],
+    ["Shipping", r.costs.shipping, "#14b8a6"],
     ["Fees & extras", r.costs.fees, "#eab308"],
     ["Set-up", r.costs.setup, "#94a3b8"],
   ].filter(x => x[1] > 0);
   $("barIn").style.width = "0";
+  $("barBonus").style.width = "0";
   $("barOut").innerHTML = parts.map(([, v, c]) => `<i style="background:${c}" data-w="${(100 * v) / scale}"></i>`).join("");
-  $("valIn").textContent = money(r.revenue);
+  $("valIn").textContent = money(moneyIn);
   $("valOut").textContent = money(r.totalCosts);
-  $("legend").innerHTML = parts.map(([n, v, c]) => `<span style="--c:${c}">${n} ${money(v)}</span>`).join("");
+  $("legend").innerHTML = `<span style="--c:#15803d">Sales ${money(r.revenue)}</span>` +
+    (r.bonus ? `<span style="--c:#ffc814">Goal bonuses ${money(r.bonus)}</span>` : "") +
+    parts.map(([n, v, c]) => `<span style="--c:${c}">${n} ${money(v)}</span>`).join("");
   requestAnimationFrame(() => requestAnimationFrame(() => {
     $("barIn").style.width = (100 * r.revenue) / scale + "%";
+    $("barBonus").style.width = (100 * r.bonus) / scale + "%";
     $("barOut").querySelectorAll("i").forEach(i => (i.style.width = i.dataset.w + "%"));
   }));
 
-  renderImpact(r.profit);
+  renderGoals(r);
+  renderImpact(r);
   $("lessons").innerHTML = lessons(r).map(([e, t], i) =>
     `<div class="lesson" style="animation-delay:${1.6 + i * 0.2}s"><span class="l-emoji">${e}</span><span>${t}</span></div>`
   ).join("");
@@ -373,66 +405,25 @@ function renderServerBoard(el, data) {
     data.top.map(s => `<li class="${s.id === me ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${esc(s.name)}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
 }
 
-// ---- Long-term impact on the planet and the local area ----
-// Doesn't change profit; it shows what the choices mean beyond year one.
-// [planet, local, what it means]. Choices not listed are neutral.
-const IMPACT = {
-  location: {
-    market: [1, 2, "Your market stall brings shoppers into the town centre."],
-    college: [0, 1, null],
-    street: [0, 1, null],
-    van: [-1, 1, "Your van burns fuel driving between events."],
-    online: [-1, -1, "Online orders mean lots of delivery vans, and no shop in town."],
-  },
-  quality: {
-    bulk: [-2, -2, "Bulk stock shipped from abroad means transport pollution and no local jobs."],
-    budget: [-1, 0, "Cheap stock tends to be thrown away sooner."],
-    local: [1, 2, "Buying local keeps money and jobs in the area, with fewer miles travelled."],
-    fairtrade: [1, 0, "Fairtrade means the people who make your stock are paid fairly."],
-  },
-  staff: {
-    family: [0, 1, null],
-    part: [0, 1, null],
-    apprentice: [0, 2, "Your apprentice gets a start in their career, right here in town."],
-    team: [0, 2, "You created proper local jobs."],
-    robots: [0, -2, "Machines instead of people means fewer local jobs."],
-  },
-  marketing: {
-    flyers: [-1, 0, "Most flyers end up in the bin."],
-    billboard: [-1, 0, null],
-    samples: [0, 1, null],
-  },
-  ethics: {
-    plastic: [-2, -1, "Your plastic packaging ends up as litter and landfill."],
-    recycle: [2, 0, "Recyclable packaging keeps rubbish out of landfill."],
-    charity: [0, 2, "Your donations help a local charity all year round."],
-    wage: [0, 2, "Paying a real living wage helps local families."],
-    solar: [2, 0, "Solar panels cut your carbon footprint for years to come."],
-    volunteer: [0, 2, "Volunteering makes the whole town better off."],
-  },
-};
-
-function impact() {
-  let planet = 0, local = 0;
-  const notes = [];
-  for (const [key, table] of Object.entries(IMPACT)) {
-    const hit = table[state[key]];
-    if (!hit) continue;
-    planet += hit[0];
-    local += hit[1];
-    if (hit[2]) notes.push({ score: hit[0] + hit[1], text: hit[2] });
-  }
-  const rate = s => Math.max(1, Math.min(5, Math.round(3 + s / 2)));
-  notes.sort((a, b) => a.score - b.score);
-  const worst = notes.length && notes[0].score < 0 ? notes[0] : null;
-  const best = notes.length && notes[notes.length - 1].score > 0 ? notes[notes.length - 1] : null;
-  return { planet: rate(planet), local: rate(local), worst, best };
+// ---- Goals: did they hit the targets? ----
+function renderGoals(r) {
+  $("goals").innerHTML = `<h3>🎯 Your goals</h3>` + r.goalResults.map(x => {
+    const goal = GOALS.find(g => g.id === x.id);
+    return `<div class="goal ${x.hit ? "hit" : "miss"}">
+      <span class="g-emoji">${goal.emoji}</span>
+      <span class="g-text"><b>${goal.label}</b><small>Target: ${goal.target}</small></span>
+      <span class="g-result">${x.hit ? `✅ ${goal.reward}` : "❌ Missed"}</span>
+    </div>`;
+  }).join("");
 }
 
-function renderImpact(profit) {
-  const im = impact();
+// ---- Long-term impact (scores worked out by impactOf() in model.js) ----
+function renderImpact(r) {
+  const im = r.impact;
+  const profit = r.profit;
   const both = im.planet + im.local;
   const outlook =
+    both >= 8 && profit < 0 ? "The town loves you, but you're losing money. Sort out your costs and year two could be great." :
     both >= 8 ? "Customers and the town love you. You're set up for a strong year two!" :
     both <= 4 && profit > 0 ? "Profit now, problems later. Expect complaints, bad press and customers drifting away." :
     both <= 4 ? "Losing money and hurting the area: time for a rethink." :
@@ -456,7 +447,11 @@ function lessons(r) {
   if (r.ripOff) out.push(["😠", "High prices with cheap quality made customers angry. <b>Reputation</b> matters!"]);
   if ((state.price === "low" || state.price === "rock") && margin > 0) out.push(["🏷️", "Low prices bring crowds, but your <b>profit margin</b> on each sale was tiny."]);
   if (state.price === "luxury") out.push(["👑", "Luxury prices mean big profit per sale but very few buyers. That's a <b>niche market</b>."]);
-  if (state.location === "online") out.push(["💻", "Online saved on rent, but <b>platform fees</b> took 15% of everything you sold."]);
+  if (state.location === "online" && r.perOrder > margin && margin > 0) out.push(["📦", "Delivery cost more than you made on each sale. Cheap products and postage don't mix: think about <b>unit costs</b>."]);
+  else if (state.location === "online") out.push(["💻", "Online saved on rent, but <b>platform fees</b> and delivery ate into every sale."]);
+  if (state.quality === "make" && r.turnedAway > 0) out.push(["🛠️", "Making it yourself was cheap, but you couldn't make enough. That's a <b>production capacity</b> problem."]);
+  const missed = r.goalResults.filter(x => !x.hit).length;
+  if (missed === 2) out.push(["🎯", "You missed both goals. Good businesses pick <b>objectives</b> that fit their plan."]);
   if ((state.location === "street" || state.location === "mall") && r.profit < 0) out.push(["🏙️", "Rent in busy places is a big <b>fixed cost</b>. You need lots of sales just to cover it."]);
   if (state.rival === "pricewar") out.push(["🔥", "Price wars cut everyone's profit. Standing out (<b>differentiation</b>) usually beats being cheapest."]);
   if (state.rival === "ignore") out.push(["🙈", "Ignoring <b>competition</b> cost you a quarter of your customers. Always have a plan!"]);

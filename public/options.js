@@ -13,6 +13,21 @@ const unitWord = s => PRODUCTS[s.product].unit || "each";
 const priceFor = (s, id) => PRODUCTS[s.product].prices[PRICES[id].of] * PRICES[id].mult;
 const isFood = s => PRODUCTS[s.product].staff[0] === "🧑‍🍳";
 
+// Picked after naming the business: choose 2. effect = what it does all year,
+// target = what earns the bonus at the end. Numbers live in OBJECTIVES in model.js.
+const GOALS = [
+  { id: "profit", emoji: "💰", label: "Make £30,000 profit", short: "£30k profit", effect: "Haggle hard: stock 5% cheaper, but suppliers like you less", target: "Profit of £30,000 or more", reward: "£2,000 investor bonus" },
+  { id: "survive", emoji: "🛟", label: "Survive year one", short: "Survive", effect: "Spend carefully: 20% less on marketing", target: "Don't make a loss", reward: "£1,000 off your bank loan" },
+  { id: "growth", emoji: "📈", label: "Grow fast", short: "Grow fast", effect: "10% more customers, £200 a month on promotions", target: "50% more customers than a typical shop like yours", reward: "£1,500 growth grant" },
+  { id: "stars", emoji: "⭐", label: "Five-star reviews", short: "5-star reviews", effect: "Better reputation, £150 a month on staff training", target: "Reputation of 4.5 stars or more", reward: "£1,000 business award" },
+  { id: "green", emoji: "🌍", label: "Go green", short: "Go green", effect: "Greener stock costs 3% more, customers like it", target: "4 or more trees for the planet", reward: "£2,000 green grant" },
+  { id: "community", emoji: "🏘️", label: "Help the community", short: "Community", effect: "Sponsor a local team for £100 a month", target: "5 houses for the local area", reward: "£1,500 council grant" },
+  { id: "rival", emoji: "🥊", label: "Beat the competition", short: "Beat rivals", effect: "Prices 5% lower, 8% more customers", target: "Don't lose customers when a rival opens", reward: "£1,000 market share prize" },
+  { id: "jobs", emoji: "👷", label: "Create local jobs", short: "Create jobs", effect: "Training new staff adds 10% to wages", target: "Employ an apprentice, a part-timer or a team", reward: "£1,500 hiring incentive" },
+  { id: "luxury", emoji: "💎", label: "Build a luxury brand", short: "Luxury brand", effect: "Prices 5% higher, 5% fewer customers", target: "Premium or luxury prices with top-quality stock", reward: "£2,000 brand deal" },
+  { id: "innovate", emoji: "💡", label: "Be the most innovative", short: "Innovate", effect: "£2,000 on new ideas, 8% more customers", target: "Make your own stock or launch something new", reward: "£1,500 innovation grant" },
+];
+
 const DECISIONS = [
   {
     key: "location", name: "Location", icon: "📍", title: "Where will you set up?",
@@ -28,8 +43,29 @@ const DECISIONS = [
       { id: "van", emoji: "🚐", label: "Pop-up van", short: "Pop-up van", phrase: "ran a pop-up van",
         sub: "Go to events, £600 a month", fb: "Festivals, matches, fairs: you go where the crowds are. Adverts tell them where you'll be." },
       { id: "online", emoji: "💻", label: "Online only", short: "Online only", phrase: "went online only",
-        sub: "Tiny rent, but apps take 15% of sales", fb: "Hardly any rent! But nobody walks past a website. People need to find you." },
+        sub: "Tiny rent, but apps take 10% of sales", fb: "Hardly any rent! But nobody walks past a website. People need to find you." },
     ],
+  },
+  {
+    key: "shipping", name: "Shipping", icon: "📦", title: "You sell online. Who will deliver your orders?",
+    when: s => s.location === "online",
+    options: [
+      { id: "customer", emoji: "🏷️", label: "Customer pays postage", short: "Customer pays", phrase: "made customers pay postage",
+        sub: "Costs you nothing, but lots of people give up at checkout", fb: "Free for you, but 3 in 10 shoppers abandon their basket when they see the postage." },
+      { id: "budget", emoji: "🐌", label: "Budget courier", short: "Budget", phrase: "used a budget courier",
+        sub: s => `${pounds(1.5)} a parcel. Late and lost parcels`, fb: "Cheap, but parcels turn up late or squashed. One-star reviews are rolling in." },
+      { id: "tracked", emoji: "📮", label: "Tracked delivery", short: "Tracked", phrase: "used tracked delivery",
+        sub: s => `${pounds(2.5)} a parcel. Reliable`, fb: "Parcels arrive on time with tracking. No complaints." },
+      { id: "express", emoji: "⚡", label: "Next-day express", short: "Next-day", phrase: "offered next-day delivery",
+        sub: s => `${pounds(3.8)} a parcel. Customers love it`, fb: "Order today, here tomorrow! Customers love it, but it's pricey for you." },
+      { id: "green", emoji: "🚲", label: "Carbon-neutral courier", short: "Carbon-neutral", phrase: "used a carbon-neutral courier",
+        sub: s => `${pounds(3)} a parcel. Bikes and electric vans`, fb: "Bikes and electric vans. Customers like that it's planet-friendly." },
+      { id: "myself", emoji: "🚗", label: "Deliver it myself", short: "Myself", phrase: "delivered orders themselves",
+        sub: s => `About ${pounds(0.8)} a parcel in fuel, but it eats your time`, fb: "Cheap and personal, but hours in the car means fewer orders packed." },
+    ],
+    fb: (s, r) => r.perOrder > r.price - r.unitCost
+      ? { emoji: "😱", text: `Each delivery costs more than you make on the sale. You <b>lose money</b> on every order!` }
+      : null,
   },
   {
     key: "price", name: "Price", icon: "💷", title: "How much will you charge?",
@@ -69,6 +105,11 @@ const DECISIONS = [
         sub: "Cheap stock, so-so quality", fb: "Cheap stock saves money, but some customers won't come back." },
       { id: "standard", emoji: "👍", label: "Standard", short: "Standard", phrase: "used a standard supplier",
         sub: "Decent stuff, normal price", fb: "Solid quality. Nobody's complaining." },
+      { id: "mix", emoji: "🧰", label: "Make some, buy the rest", short: "Make some", phrase: "made some of their stock",
+        sub: "£1,500 of kit, cheaper stock, a bit less time to serve", fb: "You make the best sellers yourself and buy in the rest. Smart!" },
+      { id: "make", emoji: "🛠️", label: "Make it ourselves", short: "Make it", phrase: "made their own stock",
+        sub: "£4,000 of kit, cheapest stock, but it takes your time",
+        fb: (s, r) => r.turnedAway > 0 ? "Handmade and loved, but you can't make enough to keep up!" : "Handmade by you! Customers love it, and every one costs you less." },
       { id: "local", emoji: "📍", label: "Local supplier", short: "Local", phrase: "bought from a local supplier",
         sub: "Fresh and local, costs 15% more", fb: "Customers love that you support local businesses!" },
       { id: "fairtrade", emoji: "🌍", label: "Fairtrade", short: "Fairtrade", phrase: "used a Fairtrade supplier",

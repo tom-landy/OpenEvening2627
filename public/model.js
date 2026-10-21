@@ -66,7 +66,7 @@ const LOCATIONS = fill({
   college: { footfall: 1.0, rent: 800 },
   market:  { footfall: 0.75, rent: 250 },
   van:     { footfall: 0.9, rent: 600, marketingBoost: 1.3 },
-  online:  { footfall: 0.8, rent: 100, fee: 0.15, marketingBoost: 1.8 },
+  online:  { footfall: 1.0, rent: 100, fee: 0.1, marketingBoost: 1.8 },
 }, { fee: 0, marketingBoost: 1 });
 
 // of: which of the product's three prices it starts from. premiumDemand: used
@@ -88,7 +88,102 @@ const QUALITY = fill({
   local:     { cost: 1.15, demand: 1.08, rep: 0.75 },
   fairtrade: { cost: 1.25, demand: 1,    rep: 1, posh: true },
   premium:   { cost: 1.4,  demand: 1.15, rep: 1, posh: true },
-}, { capacity: 1, cheap: false, posh: false });
+  // Making it yourself: cheap materials, but equipment up front and your time is limited
+  mix:       { cost: 0.8,  demand: 1.02, rep: 0.25, capacity: 0.85, oneOff: 1500 },
+  make:      { cost: 0.7,  demand: 1.05, rep: 0.5,  capacity: 0.65, oneOff: 4000 },
+}, { capacity: 1, cheap: false, posh: false, oneOff: 0 });
+
+// Only asked when selling online. perOrder: what each parcel costs you. Cheap
+// things are bought several at a time, so one parcel holds about £10 of stock.
+const SHIPPING = fill({
+  customer: { perOrder: 0,   demand: 0.7 },
+  budget:   { perOrder: 1.5, rep: -0.75 },
+  tracked:  { perOrder: 2.5 },
+  express:  { perOrder: 3.8, rep: 0.75, demand: 1.15 },
+  green:    { perOrder: 3,   rep: 0.5 },
+  myself:   { perOrder: 0.8, rep: 0.25, capacity: 0.6 },
+}, { perOrder: 0, rep: 0, demand: 1, capacity: 1 });
+
+// Pick 2 at the start. The effect runs all year; hitting the target pays a bonus.
+// target(choices, result before bonuses) -> true/false
+const OBJECTIVES = fill({
+  profit:    { unitCost: 0.95, rep: -0.25, reward: 2000, target: (c, r) => r.profit >= 30000 },
+  survive:   { marketing: 0.8, demand: 0.97, reward: 1000, target: (c, r) => r.profit >= 0 },
+  growth:    { demand: 1.1, monthly: 200, reward: 1500, target: (c, r) => r.customers >= 1.5 * PRODUCTS[c.product].demand },
+  stars:     { rep: 0.5, monthly: 150, reward: 1000, target: (c, r) => r.rep >= 4.5 },
+  green:     { unitCost: 1.03, rep: 0.25, reward: 2000, target: (c, r) => r.impact.planet >= 4 },
+  community: { monthly: 100, rep: 0.25, reward: 1500, target: (c, r) => r.impact.local >= 5 },
+  rival:     { price: 0.95, demand: 1.08, reward: 1000, target: c => Boolean(c.rival) && RIVAL[c.rival].demand >= 1 },
+  jobs:      { wage: 1.1, reward: 1500, target: c => ["apprentice", "part", "team"].includes(c.staff) },
+  luxury:    { price: 1.05, demand: 0.95, reward: 2000, target: c => ["high", "luxury"].includes(c.price) && QUALITY[c.quality].posh },
+  innovate:  { oneOff: 2000, demand: 1.08, reward: 1500, target: c => c.rival === "newidea" || c.quality === "make" },
+}, { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0, reward: 0 });
+
+// ---- Long-term impact on the planet and the local area ----
+// Doesn't change profit directly (only through the green/community goals).
+// [planet, local, what it means]. Choices not listed are neutral.
+const IMPACT = {
+  location: {
+    market: [1, 2, "Your market stall brings shoppers into the town centre."],
+    college: [0, 1, null],
+    street: [0, 1, null],
+    van: [-1, 1, "Your van burns fuel driving between events."],
+    online: [-1, -1, "Online orders mean lots of delivery vans, and no shop in town."],
+  },
+  shipping: {
+    budget: [-1, 0, null],
+    express: [-1, 0, "Next-day delivery means half-empty vans racing about."],
+    green: [2, 0, "Your carbon-neutral courier cancels out its emissions."],
+    myself: [-1, 1, null],
+  },
+  quality: {
+    bulk: [-2, -2, "Bulk stock shipped from abroad means transport pollution and no local jobs."],
+    budget: [-1, 0, "Cheap stock tends to be thrown away sooner."],
+    local: [1, 2, "Buying local keeps money and jobs in the area, with fewer miles travelled."],
+    fairtrade: [1, 0, "Fairtrade means the people who make your stock are paid fairly."],
+    make: [1, 1, "Making it yourself cuts out shipping and keeps skills in town."],
+    mix: [0, 1, null],
+  },
+  staff: {
+    family: [0, 1, null],
+    part: [0, 1, null],
+    apprentice: [0, 2, "Your apprentice gets a start in their career, right here in town."],
+    team: [0, 2, "You created proper local jobs."],
+    robots: [0, -2, "Machines instead of people means fewer local jobs."],
+  },
+  marketing: {
+    flyers: [-1, 0, "Most flyers end up in the bin."],
+    billboard: [-1, 0, null],
+    samples: [0, 1, null],
+  },
+  ethics: {
+    plastic: [-2, -1, "Your plastic packaging ends up as litter and landfill."],
+    recycle: [2, 0, "Recyclable packaging keeps rubbish out of landfill."],
+    charity: [0, 2, "Your donations help a local charity all year round."],
+    wage: [0, 2, "Paying a real living wage helps local families."],
+    solar: [2, 0, "Solar panels cut your carbon footprint for years to come."],
+    volunteer: [0, 2, "Volunteering makes the whole town better off."],
+  },
+};
+
+// Scores out of 5, plus the best and worst things the player did
+function impactOf(c) {
+  let planet = 0, local = 0;
+  const notes = [];
+  for (const [key, table] of Object.entries(IMPACT)) {
+    if (key === "shipping" && c.location !== "online") continue;
+    const hit = table[c[key]];
+    if (!hit) continue;
+    planet += hit[0];
+    local += hit[1];
+    if (hit[2]) notes.push({ score: hit[0] + hit[1], text: hit[2] });
+  }
+  const rate = s => Math.max(1, Math.min(5, Math.round(3 + s / 2)));
+  notes.sort((a, b) => a.score - b.score);
+  const worst = notes.length && notes[0].score < 0 ? notes[0] : null;
+  const best = notes.length && notes[notes.length - 1].score > 0 ? notes[notes.length - 1] : null;
+  return { planet: rate(planet), local: rate(local), worst, best };
+}
 
 const STAFF = fill({
   solo:       { capacity: 1500, wages: 0,    rep: -0.5 },
@@ -135,8 +230,9 @@ const STARTUP_COST = 5000; // one-off: fit-out, equipment, website
 
 // Fill gaps with middle options so the live meters show a sensible projection
 // before every decision has been made.
-const DEFAULTS = { product: "bubble", location: "college", price: "mid", quality: "standard", staff: "part", marketing: "none" };
+const DEFAULTS = { product: "bubble", location: "college", price: "mid", quality: "standard", staff: "part", marketing: "none", shipping: "tracked", objectives: [] };
 const NEUTRAL_ETHICS = { extraUnit: 0, rep: 0, share: 0, wageFactor: 1, oneOff: 0, capacity: 1 };
+const NO_SHIPPING = { perOrder: 0, rep: 0, demand: 1, capacity: 1 };
 const NEUTRAL_RIVAL = { demand: 1, priceCut: 1, oneOff: 0, share: 0, rep: 0, monthly: 0 };
 
 function simulate(picked) {
@@ -149,9 +245,16 @@ function simulate(picked) {
   const m = MARKETING[c.marketing];
   const eth = c.ethics ? ETHICS[c.ethics] : NEUTRAL_ETHICS;
   const rv = c.rival ? RIVAL[c.rival] : NEUTRAL_RIVAL;
+  const sh = c.location === "online" ? SHIPPING[c.shipping] : NO_SHIPPING;
+  // Two goals combine by multiplying (or adding, for money and reputation)
+  const goals = (c.objectives || []).map(id => OBJECTIVES[id]).filter(Boolean);
+  const g = goals.reduce((a, o) => ({
+    unitCost: a.unitCost * o.unitCost, rep: a.rep + o.rep, marketing: a.marketing * o.marketing, demand: a.demand * o.demand,
+    monthly: a.monthly + o.monthly, price: a.price * o.price, wage: a.wage * o.wage, oneOff: a.oneOff + o.oneOff,
+  }), { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0 });
 
   // Reputation out of 5, starts at 3
-  let rep = 3 + pr.rep + q.rep + st.rep + m.rep + eth.rep + rv.rep;
+  let rep = 3 + pr.rep + q.rep + st.rep + m.rep + eth.rep + rv.rep + sh.rep + g.rep;
   const ripOff = (c.price === "high" || c.price === "luxury") && q.cheap;
   if (ripOff) rep -= 1.5;
   rep = Math.max(1, Math.min(5, rep));
@@ -161,27 +264,38 @@ function simulate(picked) {
   const priceDemand = q.posh && pr.premiumDemand ? pr.premiumDemand : pr.demand;
   const lift = 1 + (m.lift - 1) * loc.marketingBoost;
 
-  const demand = Math.round(p.demand * loc.footfall * priceDemand * q.demand * lift * repFactor * rv.demand);
-  const capacity = Math.round(st.capacity * q.capacity * eth.capacity);
+  const demand = Math.round(p.demand * loc.footfall * priceDemand * q.demand * lift * repFactor * rv.demand * sh.demand * g.demand);
+  const capacity = Math.round(st.capacity * q.capacity * eth.capacity * sh.capacity);
   const customers = Math.min(demand, capacity);
   const turnedAway = Math.max(0, demand - capacity);
 
-  const price = p.prices[pr.of] * pr.mult * rv.priceCut;
-  const unitCost = p.unitCost * q.cost + eth.extraUnit;
+  const price = p.prices[pr.of] * pr.mult * rv.priceCut * g.price;
+  const unitCost = p.unitCost * q.cost * g.unitCost + eth.extraUnit;
+  const basket = Math.max(1, 10 / p.prices.mid); // items per parcel
 
   const revenue = customers * price * 12;
   const costs = {
     stock: customers * unitCost * 12,
     rent: loc.rent * 12,
-    wages: st.wages * (c.staff === "robots" ? 1 : eth.wageFactor) * 12, // machines aren't paid wages
-    marketing: (m.cost + rv.monthly) * 12,
+    wages: st.wages * (c.staff === "robots" ? 1 : eth.wageFactor * g.wage) * 12, // machines aren't paid wages
+    marketing: (m.cost * g.marketing + rv.monthly + g.monthly) * 12,
+    shipping: (customers / basket) * sh.perOrder * 12,
     fees: revenue * (loc.fee + eth.share + rv.share),
-    setup: STARTUP_COST + eth.oneOff + rv.oneOff,
+    setup: STARTUP_COST + eth.oneOff + rv.oneOff + q.oneOff + g.oneOff,
   };
   const totalCosts = Object.values(costs).reduce((a, b) => a + b, 0);
-  const profit = revenue - totalCosts;
+  const impact = impactOf(c);
+  const before = { customers, rep, profit: revenue - totalCosts, impact };
 
-  return { customers, demand, capacity, turnedAway, rep, ripOff, price, unitCost, revenue, costs, totalCosts, profit };
+  // Goal bonuses are judged on the year before any bonus is paid
+  const goalResults = (c.objectives || []).filter(id => OBJECTIVES[id]).map(id => {
+    const hit = Boolean(OBJECTIVES[id].target(c, before));
+    return { id, hit, reward: hit ? OBJECTIVES[id].reward : 0 };
+  });
+  const bonus = goalResults.reduce((a, x) => a + x.reward, 0);
+  const profit = revenue + bonus - totalCosts;
+
+  return { customers, demand, capacity, turnedAway, rep, ripOff, price, unitCost, revenue, bonus, costs, totalCosts, profit, impact, goalResults, perOrder: sh.perOrder / basket };
 }
 
 function starRating(profit) {
@@ -192,4 +306,23 @@ function starRating(profit) {
   return 5;
 }
 
-if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL };
+// Checks a finished game's choices (used by the server). Returns tidy choices or null.
+function validChoices(c) {
+  if (!c) return null;
+  const tables = { product: PRODUCTS, location: LOCATIONS, price: PRICES, quality: QUALITY, staff: STAFF, marketing: MARKETING, ethics: ETHICS, rival: RIVAL };
+  const out = {};
+  for (const [k, table] of Object.entries(tables)) {
+    if (typeof c[k] !== "string" || !Object.prototype.hasOwnProperty.call(table, c[k])) return null;
+    out[k] = c[k];
+  }
+  if (out.location === "online") {
+    if (!Object.prototype.hasOwnProperty.call(SHIPPING, c.shipping)) return null;
+    out.shipping = c.shipping;
+  }
+  const goals = Array.isArray(c.objectives) ? c.objectives : [];
+  if (goals.length !== 2 || goals[0] === goals[1] || !goals.every(id => Object.prototype.hasOwnProperty.call(OBJECTIVES, id))) return null;
+  out.objectives = [goals[0], goals[1]];
+  return out;
+}
+
+if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, validChoices, impactOf, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, SHIPPING, OBJECTIVES };

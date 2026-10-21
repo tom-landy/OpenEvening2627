@@ -17,16 +17,6 @@ const PUBLIC = path.join(__dirname, "public");
 const MAX_RESULTS = 5000;
 const KEEP_MS = 24 * 60 * 60 * 1000;
 
-const CHOICES = {
-  product: Object.keys(M.PRODUCTS),
-  location: Object.keys(M.LOCATIONS),
-  price: Object.keys(M.PRICES),
-  quality: Object.keys(M.QUALITY),
-  staff: Object.keys(M.STAFF),
-  marketing: Object.keys(M.MARKETING),
-  ethics: Object.keys(M.ETHICS),
-  rival: Object.keys(M.RIVAL),
-};
 
 let results = [];
 let resetAt = 0;
@@ -42,11 +32,8 @@ function record(body, restoring = false) {
   if (!c) return null;
   // A game saved offline before a reset belongs to the old leaderboard
   if (body.t && body.t < resetAt) return null;
-  const choices = {};
-  for (const [k, allowed] of Object.entries(CHOICES)) {
-    if (!allowed.includes(c[k])) return null;
-    choices[k] = c[k];
-  }
+  const choices = M.validChoices(c);
+  if (!choices) return null;
   // A typed name that fails the filter quietly becomes one of the ready-made ones
   const name = M.cleanName(body.name) || randomName(choices.product);
   const maxAge = restoring ? KEEP_MS : 12 * 3600000;

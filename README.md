@@ -1,6 +1,6 @@
 # Bexhill College Business Tycoon
 
-An open evening game for Business Studies. Students pick what to sell (11 products), name their business (tap a suggestion or type their own), then make 7 more decisions: location, price, supplier, staff, marketing, ethics, and how to react to a rival (6 options each). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
+An open evening game for Business Studies. Students pick what to sell (12 products), name their business (tap a suggestion or type their own), then make 7 more decisions: location, price, supplier, staff, marketing, ethics, and how to react to a rival (6 options each). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
 
 A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, a pie chart of what people sold, what they chose at each step, the latest games, the choice that made the biggest difference, and star ratings along the bottom.
 

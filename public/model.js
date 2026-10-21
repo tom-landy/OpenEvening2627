@@ -15,6 +15,7 @@ const PRODUCTS = {
   gaming:   { name: "Gaming Café",     emoji: "🎮", demand: 1200, unitCost: 0.8, prices: { low: 3, mid: 5, high: 8 },        colour: "#8f7bff", sub: "Sell hours of play, not things", staff: SHOP, unit: "an hour" },
   plants:   { name: "House Plants",    emoji: "🪴", demand: 700,  unitCost: 4,   prices: { low: 7, mid: 11, high: 18 },      colour: "#6fd36f", sub: "Calm customers, careful stock", staff: SHOP },
   resell:   { name: "Second-hand Reseller", emoji: "👚", demand: 580, unitCost: 5, prices: { low: 9, mid: 14, high: 22 },  colour: "#f4a6c8", sub: "Buy pre-loved clothes cheap, sell them on", staff: SHOP },
+  dogs:     { name: "Posh Dog Treats", emoji: "🐶", demand: 650, unitCost: 2, prices: { low: 6, mid: 9, high: 14 },  colour: "#c8935a", sub: "A small niche, but dog owners are loyal", staff: FOOD },
 };
 
 // Business names are picked at random from these lists, so players never type anything.
@@ -30,6 +31,7 @@ const NAMES = {
   gaming:   ["Level Up", "Press Start", "Game On", "Pixel Palace", "Respawn"],
   plants:   ["Leaf It Out", "Grow For It", "Plant Party", "Pot Luck", "Fern Gully"],
   resell:   ["Second Wind", "Thrift Shift", "Pre-Loved Club", "Rewear Room", "Vintage Vault"],
+  dogs:     ["Barking Mad", "Good Boy Bakes", "Paws & Treats", "Bone Appetit", "Woof Bakery"],
 };
 
 // ---- Player-typed business names ----

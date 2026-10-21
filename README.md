@@ -2,7 +2,7 @@
 
 An open evening game for Business Studies. Students make 8 decisions (what to sell from 10 products, location, price, supplier, staff, marketing, ethics, and how to react to a rival). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
 
-A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, what people sold, what they chose at each step, star ratings, the choice that made the biggest difference, and a QR code so visitors can play on their own phones.
+A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, what people sold, what they chose at each step, star ratings, and the choice that made the biggest difference.
 
 Plain HTML, CSS and JavaScript plus a small Node server with no dependencies.
 

@@ -82,24 +82,15 @@ h1 span { color: var(--accent); }
 .feed b { font-variant-numeric: tabular-nums; font-weight: 600; }
 li.new { animation: flash 2.5s ease-out; }
 
-/* play on your phone */
-.play { position: fixed; right: 1.6rem; bottom: 1.4rem; display: flex; align-items: center; gap: .9rem; background: #fff; color: var(--bg); border-radius: 1.2rem; padding: .7rem 1.1rem .7rem .7rem; box-shadow: 0 1rem 3rem rgba(0, 0, 0, .4); }
-.play #qr { width: 7rem; height: 7rem; }
-.play #qr svg { width: 100%; height: 100%; display: block; }
-.play b { display: block; font-size: 1.25rem; }
-.play span { font-size: 1rem; color: #555; }
-
 .empty { display: none; position: fixed; inset: 0; background: rgba(29, 27, 58, .92); flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .4rem; z-index: 5; }
 .empty.show { display: flex; }
 .empty div { font-size: 6rem; }
 .empty p { margin: 0; font-size: 2.4rem; font-weight: 600; }
 .empty small { color: var(--muted); font-size: 1.3rem; }
-.empty ~ .play, .empty.show ~ .play { z-index: 6; }
 
 @media (max-width: 1300px) {
   :root { font-size: 14px; }
   .grid { grid-template-columns: 1fr 1fr; }
-  .play { position: static; align-self: flex-start; }
 }
 @media (max-width: 700px) {
   body { padding: 1rem; }

@@ -184,19 +184,6 @@ function ago(t) {
   return Math.round(s / 3600) + " h ago";
 }
 
-// ---- QR code so people can play on their own phones ----
-function renderQR() {
-  const url = location.origin + "/";
-  $("playUrl").textContent = location.host;
-  try {
-    const qr = qrcode(0, "M");
-    qr.addData(url);
-    qr.make();
-    $("qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
-  } catch { $("play").style.display = "none"; }
-  if (location.protocol === "file:") $("play").style.display = "none";
-}
-
 // ---- Reset for a new evening ----
 document.addEventListener("keydown", async e => {
   if (!(e.shiftKey && e.key === "R")) return;
@@ -210,7 +197,6 @@ document.addEventListener("keydown", async e => {
   render();
 });
 
-renderQR();
 render();
 poll();
 setInterval(poll, POLL_MS);

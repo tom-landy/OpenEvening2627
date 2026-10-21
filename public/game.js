@@ -8,114 +8,24 @@ const CONFIG = {
 
 
 const money = n => (n < 0 ? "-£" : "£") + Math.abs(Math.round(n)).toLocaleString("en-GB");
-const pounds = n => "£" + (n >= 20 && n % 1 === 0 ? n : n.toFixed(2));
-const unit = s => PRODUCTS[s.product].unit || "each";
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const call = (v, ...args) => (typeof v === "function" ? v(...args) : v);
 
 // ---- The 8 decisions ----
-// Each option's `sub` and `feedback` can be a function of the game state so the
-// text matches what the player is selling.
+// Decisions 2 to 8 live in options.js so the dashboard can share their labels.
 const STEPS = [
   {
     key: "product", icon: "🛍️", title: "What will you sell?",
     options: Object.entries(PRODUCTS).map(([id, p]) => ({ id, emoji: p.emoji, label: p.name, sub: p.sub })),
-    feedback: (s) => ({ emoji: PRODUCTS[s.product].emoji, text: `Welcome to <b>${s.name}</b>! You've spent £5,000 setting up. Now let's find a home for it.` }),
+    fb: s => `Welcome to <b>${s.name}</b>! You've spent £5,000 setting up. Now let's find a home for it.`,
   },
-  {
-    key: "location", icon: "📍", title: "Where will you set up?",
-    options: [
-      { id: "street",  emoji: "🏙️", label: "High street", sub: "Super busy, but rent is £2,000 a month" },
-      { id: "college", emoji: "🏫", label: "Next to a college", sub: "Steady crowd, rent is £800 a month" },
-      { id: "online",  emoji: "💻", label: "Online only", sub: "Tiny rent, but apps take 15% of every sale" },
-    ],
-    feedback: (s) => ({
-      street:  { emoji: "🏙️", text: "Thousands walk past every day. That rent is going to hurt if they don't come in." },
-      college: { emoji: "🏫", text: "Hungry students on your doorstep, and rent you can afford." },
-      online:  { emoji: "💻", text: "Hardly any rent! But nobody walks past a website. People need to find you." },
-    }[s.location]),
-  },
-  {
-    key: "price", icon: "💷", title: "How much will you charge?",
-    options: [
-      { id: "low",  emoji: "🏷️", label: "Bargain", sub: (s) => `${pounds(PRODUCTS[s.product].prices.low)} ${unit(s)}. Crowds love a deal` },
-      { id: "mid",  emoji: "⚖️", label: "Fair price", sub: (s) => `${pounds(PRODUCTS[s.product].prices.mid)} ${unit(s)}. Same as most places` },
-      { id: "high", emoji: "💎", label: "Premium", sub: (s) => `${pounds(PRODUCTS[s.product].prices.high)} ${unit(s)}. Fewer buyers, more profit each` },
-    ],
-    feedback: (s, r) => ({
-      low:  { emoji: "🏷️", text: `Cheap! More customers, but you only keep ${pounds(r.price - r.unitCost)} from each sale.` },
-      mid:  { emoji: "⚖️", text: `A fair price. You keep ${pounds(r.price - r.unitCost)} from each sale after paying for stock.` },
-      high: { emoji: "💎", text: `You keep ${pounds(r.price - r.unitCost)} from each sale. Customers will expect it to be amazing.` },
-    }[s.price]),
-  },
-  {
-    key: "quality", icon: "🥇", title: "Which supplier will you use?",
-    options: [
-      { id: "budget",   emoji: "📦", label: "Budget", sub: "Cheapest stock, so-so quality" },
-      { id: "standard", emoji: "👍", label: "Standard", sub: "Decent stuff, normal price" },
-      { id: "premium",  emoji: "✨", label: "Premium", sub: "Top quality, costs 40% more" },
-    ],
-    feedback: (s, r) => {
-      if (r.ripOff) return { emoji: "😠", text: "Premium prices for budget stuff? Customers feel ripped off. Bad reviews incoming!" };
-      return {
-        budget:   { emoji: "📦", text: "Cheap stock saves money, but some customers won't come back." },
-        standard: { emoji: "👍", text: "Solid quality. Nobody's complaining." },
-        premium:  { emoji: "✨", text: s.price === "high" ? "Premium price, premium product. People happily pay for quality!" : "Delicious! Word is spreading, but each one costs you more to make." },
-      }[s.quality];
-    },
-  },
-  {
-    key: "staff", icon: "🧑‍🍳", title: "Who's working in your business?",
-    options: [
-      { id: "solo", emoji: "🙋", label: "Just me", sub: "No wages, but you can only serve so many" },
-      { id: "part", emoji: "👯", label: "Me + a part-timer", sub: "£900 a month in wages" },
-      { id: "team", emoji: "👨‍👩‍👧‍👦", label: "A full team", sub: "£2,800 a month, serve loads of people" },
-    ],
-    feedback: (s, r) => {
-      if (r.turnedAway > 0) return { emoji: "😫", text: `Queue out the door! You're turning away <b>${r.turnedAway.toLocaleString()}</b> customers a month.` };
-      if (s.staff === "team" && r.customers < r.capacity * 0.5) return { emoji: "🥱", text: "Your team is standing around. You pay wages even when it's quiet." };
-      return { emoji: "😊", text: "Just the right number of people to serve everyone who comes in." };
-    },
-  },
-  {
-    key: "marketing", icon: "📣", title: "How will people hear about you?",
-    options: [
-      { id: "none",       emoji: "💬", label: "Word of mouth", sub: "Free! Hope people tell their friends" },
-      { id: "social",     emoji: "📸", label: "Social media", sub: "Ads and posts, £400 a month" },
-      { id: "influencer", emoji: "🤳", label: "Pay an influencer", sub: "Huge reach, £1,200 a month" },
-    ],
-    feedback: (s, r) => ({
-      none:       { emoji: "💬", text: s.location === "online" ? "Online with no adverts? Hardly anyone can find you." : "Free is nice, but lots of people still don't know you exist." },
-      social:     { emoji: "📸", text: "Your posts are getting likes and shares. New faces every week!" },
-      influencer: { emoji: "🤳", text: r.turnedAway > 0 ? "Thousands of fans want in, but you can't serve them all!" : "Your video went viral! Is the extra cost worth it?" },
-    }[s.marketing]),
-  },
-  {
-    key: "ethics", icon: "🌍", title: "How will you do the right thing?",
-    options: [
-      { id: "plastic", emoji: "🥤", label: "Cheapest packaging", sub: "Plastic. Costs nothing extra" },
-      { id: "recycle", emoji: "♻️", label: "Recyclable packaging", sub: "15p extra on every sale" },
-      { id: "charity", emoji: "💚", label: "Help a local charity", sub: "Give away 5% of your sales" },
-    ],
-    feedback: (s) => ({
-      plastic: { emoji: "🥤", text: "Someone posted your plastic waste online. Your reputation took a hit." },
-      recycle: { emoji: "♻️", text: "Customers notice you care about the planet. Good for your reputation!" },
-      charity: { emoji: "💚", text: "The local paper wrote about you. People love a business that gives back!" },
-    }[s.ethics]),
-  },
-  {
-    key: "rival", icon: "🚨", title: "🚨 A rival just opened nearby! What now?",
-    options: [
-      { id: "pricewar", emoji: "🔥", label: "Price war", sub: "Cut your prices by 15%" },
-      { id: "newidea",  emoji: "🚀", label: "Launch something new", sub: "Costs £3,000, gives people a reason to choose you" },
-      { id: "loyalty",  emoji: "💳", label: "Loyalty cards", sub: "Regulars get 5% off, so they stay" },
-    ],
-    feedback: (s) => ({
-      pricewar: { emoji: "🔥", text: "You kept your customers, but now you earn less on every sale." },
-      newidea:  { emoji: "🚀", text: "Your new idea is a hit! People are choosing you over the rival." },
-      loyalty:  { emoji: "💳", text: "Your regulars are sticking with you. Loyal customers are gold." },
-    }[s.rival]),
-  },
+  ...DECISIONS,
 ];
+
+function feedbackFor(st, opt, r) {
+  const fb = call(st.fb, state, r) || call(opt.fb, state, r);
+  return typeof fb === "string" ? { emoji: opt.emoji, text: fb } : fb;
+}
 
 // ---- State ----
 let state = {};
@@ -170,11 +80,12 @@ function renderStep() {
   opts.classList.remove("locked");
   opts.innerHTML = "";
   opts.classList.toggle("many", st.options.length > 3);
+  opts.classList.toggle("lots", st.options.length > 6);
   st.options.forEach(o => {
     const b = document.createElement("button");
     b.className = "opt";
     b.style.setProperty("--i", opts.children.length);
-    const sub = typeof o.sub === "function" ? o.sub(state) : o.sub;
+    const sub = call(o.sub, state);
     b.innerHTML = `<span class="o-emoji">${o.emoji}</span><span class="o-text"><span class="o-label">${o.label}</span><span class="o-sub">${sub}</span></span>`;
     b.addEventListener("click", () => choose(o, b));
     opts.appendChild(b);
@@ -196,7 +107,7 @@ function choose(opt, btn) {
   const r = simulate(picks());
   updateScene(st.key, r);
   updateMeters(r);
-  const fb = st.feedback(state, r);
+  const fb = feedbackFor(st, opt, r);
   setTimeout(() => showFeedback(fb), 350);
 }
 
@@ -278,37 +189,44 @@ function updateScene(key, r) {
   }
   if (key === "location") {
     $("scene").classList.add(state.location);
-    $("backdrop").textContent = { street: "🏢🏬🏦🏨", college: "🌳🏫🌳", online: "📶🛰️📶" }[state.location];
+    $("backdrop").textContent = { street: "🏢🏬🏦🏨", mall: "🏬🛍️🏬", college: "🌳🏫🌳", market: "⛺🎪⛺", van: "🎡🎪🏟️", online: "📶🛰️📶" }[state.location];
     $("backdrop").classList.add("show");
   }
   if (key === "price") {
-    $("pricetag").textContent = pounds(p.prices[state.price]);
+    $("pricetag").textContent = state.price === "pwyw" ? "You choose!" : pounds(r.price);
     $("pricetag").classList.add("show");
   }
   if (key === "quality") {
-    const n = { budget: 1, standard: 2, premium: 3 }[state.quality];
-    $("goods").innerHTML = p.emoji.repeat(n) + (state.quality === "premium" ? '<span class="spark">✨</span>' : "");
+    const n = { bulk: 1, budget: 1, standard: 2, local: 2, fairtrade: 2, premium: 3 }[state.quality];
+    const extra = { bulk: "🚢", local: "📍", fairtrade: "🌍", premium: "✨" }[state.quality];
+    $("goods").innerHTML = p.emoji.repeat(n) + (extra ? `<span class="spark">${extra}</span>` : "");
   }
   if (key === "staff") {
-    const who = p.staff.slice(0, { solo: 1, part: 2, team: 3 }[state.staff]);
+    const who = {
+      solo: [p.staff[0]], family: [p.staff[0], "👵", "🧒"], apprentice: [p.staff[0], "🧑‍🎓"],
+      part: p.staff.slice(0, 2), team: p.staff, robots: [p.staff[0], "🤖"],
+    }[state.staff];
     $("staff").innerHTML = who.map(w => `<span>${w}</span>`).join("");
   }
   if (key === "marketing") {
     $("promo").innerHTML = {
       none: `<div class="bubble">"Have you tried it?"</div>💬`,
+      flyers: `<div class="bubble">Grand opening!</div>📄`,
+      samples: `<div class="bubble">${isFood(state) ? "Free taste!" : "Free gift!"}</div>🎁`,
+      billboard: `<div class="bubble">${state.name}</div>🪧`,
       social: `<div class="bubble">#${state.name.replace(/[^A-Za-z]/g, "")}</div>📸<span class="floaty">❤️</span>`,
       influencer: `<div class="bubble">1.2M followers!</div>🤳<span class="floaty">⭐</span>`,
     }[state.marketing];
     $("promo").classList.add("show");
   }
   if (key === "ethics") {
-    $("eco").textContent = { plastic: "🥤", recycle: "♻️", charity: "💚" }[state.ethics];
+    $("eco").textContent = { plastic: "🥤", recycle: "♻️", charity: "💚", wage: "💷", solar: "☀️", volunteer: "🤝" }[state.ethics];
     $("eco").classList.add("show");
   }
   if (key === "rival") {
-    $("response").textContent = { pricewar: "🔥 15% OFF", newidea: "🚀 NEW!", loyalty: "💳 Loyalty" }[state.rival];
+    $("response").textContent = { pricewar: "🔥 15% OFF", newidea: "🚀 NEW!", loyalty: "💳 Loyalty", service: "😊 5★ service", advertise: "📣 Ads!", ignore: "🙈 ..." }[state.rival];
     $("response").classList.add("show");
-    if (state.rival === "pricewar") $("pricetag").textContent = pounds(r.price);
+    if (state.rival === "pricewar" && state.price !== "pwyw") $("pricetag").textContent = pounds(r.price);
   }
   renderQueue(r);
 }
@@ -418,16 +336,20 @@ function renderServerBoard(el, data) {
 
 function lessons(r) {
   const out = [];
+  const margin = r.price - r.unitCost;
+  if (margin <= 0) out.push(["😱", "You sold for less than it cost to make! Every sale lost money. Price must cover your <b>costs</b>."]);
   if (r.turnedAway > 0) out.push(["😫", `You turned away ${r.turnedAway.toLocaleString()} customers a month. More staff would have earned you more. That's called <b>capacity</b>.`]);
-  if (state.staff === "team" && r.customers < r.capacity * 0.5) out.push(["🥱", "Your team was often standing around. Wages are a <b>fixed cost</b>: you pay them even when it's quiet."]);
-  if (r.ripOff) out.push(["😠", "Premium price with budget quality made customers angry. <b>Reputation</b> matters!"]);
-  if (state.price === "low") out.push(["🏷️", "Bargain prices bring crowds, but your <b>profit margin</b> on each sale was tiny."]);
+  if ((state.staff === "team" || state.staff === "robots") && r.customers < r.capacity * 0.5) out.push(["🥱", "Your staff or machines were often idle. Wages and rent are <b>fixed costs</b>: you pay them even when it's quiet."]);
+  if (r.ripOff) out.push(["😠", "High prices with cheap quality made customers angry. <b>Reputation</b> matters!"]);
+  if ((state.price === "low" || state.price === "rock") && margin > 0) out.push(["🏷️", "Low prices bring crowds, but your <b>profit margin</b> on each sale was tiny."]);
+  if (state.price === "luxury") out.push(["👑", "Luxury prices mean big profit per sale but very few buyers. That's a <b>niche market</b>."]);
   if (state.location === "online") out.push(["💻", "Online saved on rent, but <b>platform fees</b> took 15% of everything you sold."]);
-  if (state.location === "street" && r.profit < 0) out.push(["🏙️", "High street rent is a big <b>fixed cost</b>. You need lots of sales just to cover it."]);
+  if ((state.location === "street" || state.location === "mall") && r.profit < 0) out.push(["🏙️", "Rent in busy places is a big <b>fixed cost</b>. You need lots of sales just to cover it."]);
   if (state.rival === "pricewar") out.push(["🔥", "Price wars cut everyone's profit. Standing out (<b>differentiation</b>) usually beats being cheapest."]);
+  if (state.rival === "ignore") out.push(["🙈", "Ignoring <b>competition</b> cost you a quarter of your customers. Always have a plan!"]);
   if (state.ethics === "plastic") out.push(["🌍", "Customers care about the planet. Cheap plastic hurt your <b>brand image</b>."]);
   if (state.marketing === "none") out.push(["📣", "People can't buy from you if they don't know you exist. <b>Marketing</b> brings customers in."]);
-  if (state.marketing === "influencer" && r.turnedAway > 0) out.push(["🤳", "Your influencer found fans you couldn't serve. Money spent for nothing!"]);
+  if ((state.marketing === "influencer" || state.marketing === "billboard") && r.turnedAway > 0) out.push(["🤳", "Your adverts found fans you couldn't serve. Money spent for nothing!"]);
   if (out.length === 0) out.push(["🏆", "You balanced price, quality and costs brilliantly. That's what real business owners do every day!"]);
   return out.slice(0, 3);
 }

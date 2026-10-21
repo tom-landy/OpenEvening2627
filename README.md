@@ -1,6 +1,6 @@
 # Be the Boss
 
-An open evening game for Business Studies. Students make 8 decisions (what to sell from 10 products, location, price, supplier, staff, marketing, ethics, and how to react to a rival). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
+An open evening game for Business Studies. Students make 8 decisions: what to sell (10 products), then location, price, supplier, staff, marketing, ethics, and how to react to a rival (6 options each). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
 
 A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, what people sold, what they chose at each step, star ratings, and the choice that made the biggest difference.
 
@@ -37,5 +37,6 @@ Game: http://localhost:3000 · Dashboard: http://localhost:3000/dashboard
 ## Changing things
 
 - Wording at the top of `public/game.js` (`CONFIG`): the subtitle, closing message, idle timeout, how long each feedback card stays up.
-- The questions and feedback text: `STEPS` in `public/game.js`. If you change option names, update `DECISIONS` in `public/dashboard.js` to match.
-- Products, business names and all the numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play all 21,870 possible games and check the spread of star ratings and that no product is far ahead of the rest.
+- The questions, option names and feedback text: `public/options.js` (the game and the dashboard both read it). The product question is in `STEPS` in `public/game.js`.
+- Adding an option means adding it in `public/options.js` and giving it numbers under the same id in `public/model.js`.
+- Products, business names and all the numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play all 2.8 million possible games (takes a few seconds) and check the spread of star ratings and that no product is far ahead of the rest.

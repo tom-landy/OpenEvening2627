@@ -6,26 +6,6 @@ const POLL_MS = 4000;
 const CACHE_KEY = "beTheBoss.dashboard";
 const KEEP_MS = 18 * 60 * 60 * 1000;
 
-// Kept in step with STEPS in game.js (minus the product step, which has its own chart)
-const DECISIONS = [
-  { key: "location", title: "Location", options: { street: ["🏙️", "High street"], college: ["🏫", "Next to college"], online: ["💻", "Online only"] } },
-  { key: "price", title: "Price", options: { low: ["🏷️", "Bargain"], mid: ["⚖️", "Fair"], high: ["💎", "Premium"] } },
-  { key: "quality", title: "Supplier", options: { budget: ["📦", "Budget"], standard: ["👍", "Standard"], premium: ["✨", "Premium"] } },
-  { key: "staff", title: "Staff", options: { solo: ["🙋", "Just me"], part: ["👯", "+ part-timer"], team: ["👨‍👩‍👧‍👦", "Full team"] } },
-  { key: "marketing", title: "Marketing", options: { none: ["💬", "Word of mouth"], social: ["📸", "Social media"], influencer: ["🤳", "Influencer"] } },
-  { key: "ethics", title: "Doing right", options: { plastic: ["🥤", "Plastic"], recycle: ["♻️", "Recyclable"], charity: ["💚", "Charity"] } },
-  { key: "rival", title: "vs the rival", options: { pricewar: ["🔥", "Price war"], newidea: ["🚀", "Something new"], loyalty: ["💳", "Loyalty cards"] } },
-];
-const PHRASE = {
-  location: { street: "set up on the high street", college: "set up next to a college", online: "went online only" },
-  price: { low: "charged bargain prices", mid: "charged a fair price", high: "charged premium prices" },
-  quality: { budget: "used a budget supplier", standard: "used a standard supplier", premium: "used a premium supplier" },
-  staff: { solo: "worked alone", part: "hired a part-timer", team: "hired a full team" },
-  marketing: { none: "relied on word of mouth", social: "used social media", influencer: "paid an influencer" },
-  ethics: { plastic: "used plastic packaging", recycle: "used recyclable packaging", charity: "gave to charity" },
-  rival: { pricewar: "started a price war", newidea: "launched something new", loyalty: "brought in loyalty cards" },
-};
-
 const $ = id => document.getElementById(id);
 const money = n => (n < 0 ? "-£" : "£") + Math.abs(Math.round(n)).toLocaleString("en-GB");
 const avg = list => (list.length ? list.reduce((a, x) => a + x.profit, 0) / list.length : 0);
@@ -106,7 +86,7 @@ function render() {
   renderStars(all);
   renderInsight(all);
 
-  const latest = [...all].sort((a, b) => b.t - a.t).slice(0, 6);
+  const latest = [...all].sort((a, b) => b.t - a.t).slice(0, 5);
   $("feed").innerHTML = latest.map(r => `
     <li class="${shownIds.size && !shownIds.has(r.id) ? "new" : ""}">
       <span>${PRODUCTS[r.choices.product].emoji} ${esc(r.name)}</span>
@@ -135,16 +115,16 @@ function renderProducts(all) {
 
 function renderChoices(all) {
   $("choices").innerHTML = DECISIONS.map(d => {
-    const rows = Object.entries(d.options).map(([id, [emoji, label]]) => {
-      const n = all.filter(r => r.choices[d.key] === id).length;
-      return { emoji, label, pct: all.length ? Math.round((100 * n) / all.length) : 0 };
+    const rows = d.options.map(o => {
+      const n = all.filter(r => r.choices[d.key] === o.id).length;
+      return { emoji: o.emoji, label: o.short, pct: all.length ? Math.round((100 * n) / all.length) : 0 };
     });
     // Bars are scaled to the most popular option so the winner is easy to spot
     const top = Math.max(1, ...rows.map(r => r.pct));
-    return `<div class="choice"><h3>${d.title}</h3>` + rows.map(r => `
+    return `<div class="choice"><h3>${d.icon} ${d.name}</h3>` + rows.map(r => `
       <div class="crow" title="${r.pct}% chose ${r.label}">
-        <span class="ce">${r.emoji}</span><span class="cl">${r.label}</span>
-        <div class="cbar"><i style="width:${(100 * r.pct) / top}%"></i></div><b>${r.pct}%</b>
+        <span class="ce">${r.emoji}</span><span class="cl">${r.label}</span><b>${r.pct}%</b>
+        <div class="cbar"><i style="width:${(100 * r.pct) / top}%"></i></div>
       </div>`).join("") + "</div>";
   }).join("");
 }
@@ -164,17 +144,17 @@ function renderInsight(all) {
   if (all.length < 8) { el.innerHTML = ""; return; }
   let best = null;
   for (const d of DECISIONS) {
-    for (const id of Object.keys(d.options)) {
-      const yes = all.filter(r => r.choices[d.key] === id);
-      const no = all.filter(r => r.choices[d.key] !== id);
+    for (const o of d.options) {
+      const yes = all.filter(r => r.choices[d.key] === o.id);
+      const no = all.filter(r => r.choices[d.key] !== o.id);
       if (yes.length < 3 || no.length < 3) continue;
       const diff = avg(yes) - avg(no);
-      if (!best || diff > best.diff) best = { diff, d, id };
+      if (!best || diff > best.diff) best = { diff, o };
     }
   }
   if (!best || best.diff <= 0) { el.innerHTML = ""; return; }
   el.innerHTML = `<span>💡 Tonight's big lesson</span>
-    <p>People who <b>${PHRASE[best.d.key][best.id]}</b> made <b>${money(best.diff)}</b> more on average.</p>`;
+    <p>People who <b>${best.o.phrase}</b> made <b>${money(best.diff)}</b> more on average.</p>`;
 }
 
 function ago(t) {

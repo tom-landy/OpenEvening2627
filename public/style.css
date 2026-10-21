@@ -113,6 +113,11 @@ h1 span { color: var(--accent); display: inline-block; animation: wobble 3s ease
 .backdrop.show { opacity: .55; }
 .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 16%; background: linear-gradient(#9aa0b4, #7d8298); border-top: .6cqw solid #c9cddb; }
 .scene.college .ground { background: linear-gradient(#7ccf6a, #5aae4b); border-top-color: #a6e39a; }
+.scene.market .ground, .scene.van .ground { background: linear-gradient(#c9a27a, #a9825c); border-top-color: #e0c3a2; }
+.scene.mall { background: #fbeedd; }
+.scene.mall .sky { background: linear-gradient(#fff6ea, #f6e2c8); }
+.scene.mall .sun, .scene.mall .cloud { display: none; }
+.scene.mall .ground { background: repeating-linear-gradient(90deg, #e9ddd0 0 6cqw, #d9cbbb 6cqw 12cqw); border-top-color: #f3ebe1; }
 
 .browser { display: none; position: absolute; top: 0; left: 0; right: 0; height: 9%; background: #e7e5f4; z-index: 5; align-items: center; gap: 1.2cqw; padding: 0 2cqw; }
 .browser span { width: 1.8cqw; height: 1.8cqw; border-radius: 50%; background: #ff6159; }
@@ -150,7 +155,7 @@ h1 span { color: var(--accent); display: inline-block; animation: wobble 3s ease
 .staff span:nth-child(2) { animation-delay: .3s; }
 .staff span:nth-child(3) { animation-delay: .6s; }
 .eco { position: absolute; left: -7%; top: 22%; font-size: 6cqw; background: #fff; border-radius: 50%; width: 9cqw; height: 9cqw; display: grid; place-items: center; box-shadow: 0 .5cqw 1.5cqw rgba(0,0,0,.2); }
-.response { position: absolute; right: -10%; top: 10%; background: var(--bad); color: #fff; font-weight: 700; font-size: 2.6cqw; padding: .8cqw 1.8cqw; border-radius: 99px; transform: rotate(8deg); white-space: nowrap; z-index: 3; }
+.response { position: absolute; right: -12%; top: 62%; background: var(--bad); color: #fff; font-weight: 700; font-size: 2.6cqw; padding: .8cqw 1.8cqw; border-radius: 99px; transform: rotate(8deg); white-space: nowrap; z-index: 3; }
 .response.show { transform: rotate(8deg); }
 
 .pricetag {
@@ -263,9 +268,13 @@ h1 span { color: var(--accent); display: inline-block; animation: wobble 3s ease
 /* product picker: 10 options, so smaller cards in two columns */
 .options.many { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .options.many .opt { flex-direction: row; text-align: left; gap: 10px; padding: 10px 12px; box-shadow: 0 4px 0 #c9c6e6; }
-.options.many .opt:nth-child(n) { animation-delay: calc(var(--i, 0) * 30ms); }
+.options.many .opt:nth-child(n) { animation-delay: calc(var(--i, 0) * 40ms); }
 .options.many .o-text { display: flex; flex-direction: column; }
 .options.many .o-emoji { font-size: 34px; }
 .options.many .o-label { font-size: 17px; line-height: 1.15; }
 .options.many .o-sub { font-size: 13px; }
-@media (min-width: 640px) and (max-width: 959px) { .options.many { grid-template-columns: repeat(5, 1fr); } .options.many .opt { flex-direction: column; text-align: center; } }
+@media (min-width: 640px) and (max-width: 959px) {
+  .options.many { grid-template-columns: repeat(3, 1fr); }
+  .options.lots { grid-template-columns: repeat(5, 1fr); }
+  .options.many .opt { flex-direction: column; text-align: center; }
+}

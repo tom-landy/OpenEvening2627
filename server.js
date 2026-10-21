@@ -19,7 +19,7 @@ const KEEP_MS = 24 * 60 * 60 * 1000;
 const CHOICES = {
   product: Object.keys(M.PRODUCTS),
   location: Object.keys(M.LOCATIONS),
-  price: Object.keys(M.PRICE_DEMAND),
+  price: Object.keys(M.PRICES),
   quality: Object.keys(M.QUALITY),
   staff: Object.keys(M.STAFF),
   marketing: Object.keys(M.MARKETING),

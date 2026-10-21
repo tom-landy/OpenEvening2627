@@ -13,7 +13,17 @@
 <body>
   <header class="head">
     <h1><span class="college">Bexhill College</span> Business <span class="hl">Tycoon</span> · Live</h1>
-    <div class="status" id="status"><i></i><span>Connecting…</span></div>
+    <div class="head-right">
+      <div class="status" id="status"><i></i><span>Connecting…</span></div>
+      <div class="menu">
+        <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false" aria-controls="menuList">☰</button>
+        <div class="menu-list" id="menuList" hidden>
+          <button id="mReset">🧹 Reset leaderboard</button>
+          <button id="mHide">🙈 Hide a name…</button>
+          <button id="mFull">⛶ Full screen</button>
+        </div>
+      </div>
+    </div>
   </header>
 
   <section class="kpis">
@@ -22,6 +32,8 @@
     <div class="kpi"><span class="k-label">Made a profit</span><b id="kWin">0%</b></div>
     <div class="kpi"><span class="k-label">Best so far</span><b id="kBest">–</b><small id="kBestName"></small></div>
   </section>
+
+  <div class="hide-banner" id="hideBanner">🙈 Tap a business name to replace it with a ready-made one · <button id="hideDone">Done</button></div>
 
   <main class="grid">
     <section class="card top">

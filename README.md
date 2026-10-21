@@ -13,7 +13,7 @@ The server stores only the 8 choices, the business name and the time of each gam
 - the game asks them not to use their real name, because it goes on the big screen
 - names are limited to 20 letters, numbers and basic punctuation, with no long number strings (phone numbers)
 - a rude-word filter (`cleanName` in `public/model.js`) runs in the game and again on the server; anything it rejects becomes a ready-made name
-- on the dashboard, **hold Shift and click any business name** to swap it for a ready-made one (asks for the `ADMIN_KEY` the first time)
+- on the dashboard, **☰ menu → Hide a name…**, then tap any business name to swap it for a ready-made one (asks for the `ADMIN_KEY` the first time; Shift+click also works)
 
 No filter catches everything, so keep an eye on the big screen. Results are held in memory and dropped after 24 hours, or when you reset. (Render itself keeps standard request logs on its side, as any host does.)
 
@@ -37,7 +37,7 @@ Game: http://localhost:3000 · Dashboard: http://localhost:3000/dashboard
 - **Open the dashboard on the big screen first**, about 10 minutes before doors open. Render's free plan puts the app to sleep after 15 minutes with no visitors and takes up to a minute to wake. The dashboard checks in every few seconds, so it keeps the app awake all evening.
 - Results live in the server's memory, so a restart or redeploy clears them on the server. The dashboard keeps its own copy in its browser, so the big screen keeps showing the whole evening anyway. Don't push changes during the event.
 - If the wifi drops, game devices save finished games and send them when the connection comes back.
-- **Reset the leaderboard** (do this before doors open to clear test games): open the dashboard, press **Shift+R**, and enter the `ADMIN_KEY` from Render → your service → Environment. This clears the server, the dashboard, and the leaderboard on every game device (they pick it up next time they show the start screen). If there's no `ADMIN_KEY` there, add one; Render restarts the service when you save.
+- **Reset the leaderboard** (do this before doors open to clear test games): on the dashboard, open the **☰ menu** (top right) → **Reset leaderboard**, and enter the `ADMIN_KEY` from Render → your service → Environment. This clears the server, every dashboard, and the leaderboard on every game device. If there's no `ADMIN_KEY` there, add one; Render restarts the service when you save. (Shortcut on a keyboard: Shift+R.)
 - If nobody touches a game screen for 90 seconds it goes back to the start screen.
 - Full screen: F11 (Windows) or Ctrl+Cmd+F (Mac). On an iPad, "Add to Home Screen" hides the browser bar.
 

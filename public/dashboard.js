@@ -1,7 +1,7 @@
 // Live results for a second screen. Polls the server every few seconds and keeps
 // its own copy on this device, so a server restart doesn't wipe the evening.
-// Shift+R resets the evening (asks for the ADMIN_KEY set on Render).
-// Hold Shift and click a business name to swap a rude or real name for a ready-made one.
+// The ☰ menu (top right) resets the evening and hides unsuitable names; both ask
+// for the ADMIN_KEY set on Render. Shortcuts: Shift+R, and Shift+click a name.
 
 const POLL_MS = 4000;
 const CACHE_KEY = "beTheBoss.dashboard";
@@ -195,46 +195,84 @@ function ago(t) {
   return Math.round(s / 3600) + " h ago";
 }
 
-// ---- Admin: hide a name, reset the evening ----
+// ---- Admin: ☰ menu with reset and hide-a-name (Shift+R and Shift+click also work) ----
+const KEY_STORE = "beTheBoss.key";
 function adminKey(question) {
   let key = "";
-  try { key = sessionStorage.getItem("beTheBoss.key") || ""; } catch { }
+  try { key = sessionStorage.getItem(KEY_STORE) || ""; } catch { }
   return key || prompt(question + "\n\nEnter the ADMIN_KEY (Render → your service → Environment):") || "";
 }
 function rememberKey(key) {
-  try { sessionStorage.setItem("beTheBoss.key", key); } catch { }
+  try { sessionStorage.setItem(KEY_STORE, key); } catch { }
 }
-document.addEventListener("keydown", e => { if (e.key === "Shift") document.body.classList.add("hiding"); });
-document.addEventListener("keyup", e => { if (e.key === "Shift") document.body.classList.remove("hiding"); });
-document.addEventListener("click", async e => {
-  const row = e.shiftKey && e.target.closest("[data-id]");
-  if (!row || !row.dataset.id) return;
-  const r = store.results[row.dataset.id];
-  if (!r || !confirm(`Replace the name "${r.name}" with a ready-made one?`)) return;
-  const key = adminKey("Hide this name");
-  if (!key) return;
-  const res = await fetch("api/hide", { method: "POST", headers: { "x-admin-key": key, "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id }) }).catch(() => null);
-  if (!res || !res.ok) { alert(res && res.status === 403 ? "Wrong key, or no ADMIN_KEY is set on Render." : "Couldn't change that name."); return; }
+// Sends an admin request; on a wrong key, forgets it so the next try asks again
+async function adminPost(path, question, body) {
+  const key = adminKey(question);
+  if (!key) return null;
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "x-admin-key": key, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  }).catch(() => null);
+  if (res && res.status === 403) {
+    try { sessionStorage.removeItem(KEY_STORE); } catch { }
+    alert("Wrong key, or no ADMIN_KEY is set on Render.");
+    return null;
+  }
+  if (!res || !res.ok) { alert("Couldn't reach the server. Try again in a moment."); return null; }
   rememberKey(key);
-  const data = await res.json();
-  store.results[data.entry.id] = data.entry;
-  saveCache();
-  render();
-});
+  return res.json();
+}
 
-document.addEventListener("keydown", async e => {
-  if (!(e.shiftKey && e.key === "R")) return;
-  if (!confirm("Clear ALL results for every screen?")) return;
-  const key = adminKey("Reset the leaderboard");
-  if (!key) return;
-  const res = await fetch("api/reset", { method: "POST", headers: { "x-admin-key": key } }).catch(() => null);
-  if (!res || !res.ok) { alert(res && res.status === 403 ? "Wrong key, or no ADMIN_KEY is set on Render." : "Couldn't reach the server."); return; }
-  rememberKey(key);
-  const data = await res.json();
+async function resetBoard() {
+  if (!confirm("Clear ALL results for every screen?\n\nThis can't be undone.")) return;
+  const data = await adminPost("api/reset", "Reset the leaderboard");
+  if (!data) return;
   store = { resetAt: data.resetAt, results: {} };
   saveCache();
   render();
+}
+
+async function hideName(id) {
+  const r = store.results[id];
+  if (!r || !confirm(`Replace the name "${r.name}" with a ready-made one?`)) return;
+  const data = await adminPost("api/hide", "Hide this name", { id });
+  if (!data) return;
+  store.results[data.entry.id] = data.entry;
+  saveCache();
+  render();
+}
+
+function setHideMode(on) { document.body.classList.toggle("hide-mode", on); }
+
+function toggleMenu(open) {
+  const list = $("menuList");
+  const show = open === undefined ? list.hidden : open;
+  list.hidden = !show;
+  $("menuBtn").setAttribute("aria-expanded", String(show));
+}
+$("menuBtn").addEventListener("click", e => { e.stopPropagation(); toggleMenu(); });
+$("mReset").addEventListener("click", () => { toggleMenu(false); resetBoard(); });
+$("mHide").addEventListener("click", () => { toggleMenu(false); setHideMode(true); });
+$("mFull").addEventListener("click", () => {
+  toggleMenu(false);
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen?.().catch(() => { });
 });
+$("hideDone").addEventListener("click", () => setHideMode(false));
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".menu")) toggleMenu(false);
+  const row = e.target.closest("[data-id]");
+  if (!row || !row.dataset.id) return;
+  if (e.shiftKey || document.body.classList.contains("hide-mode")) hideName(row.dataset.id);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Shift") document.body.classList.add("hiding");
+  if (e.key === "Escape") { toggleMenu(false); setHideMode(false); }
+  if (e.shiftKey && e.key === "R") resetBoard();
+});
+document.addEventListener("keyup", e => { if (e.key === "Shift") document.body.classList.remove("hiding"); });
 
 render();
 poll();

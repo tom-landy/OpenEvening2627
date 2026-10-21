@@ -24,10 +24,22 @@ body {
   background: var(--bg-grad) fixed;
   display: flex; flex-direction: column; gap: .8rem;
 }
-.head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; position: relative; z-index: 6; }
 h1 { margin: 0; font-size: 2.4rem; font-weight: 700; }
 h1 .college { color: var(--muted); font-weight: 600; }
 h1 .hl { color: var(--pop); }
+.head-right { display: flex; align-items: center; gap: 1rem; }
+.menu { position: relative; }
+.menu-btn { font: inherit; font-size: 1.6rem; line-height: 1; width: 2.8rem; height: 2.8rem; border-radius: .8rem; border: 0; background: var(--card); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; }
+.menu-list { position: absolute; right: 0; top: calc(100% + .5rem); z-index: 20; background: var(--card); border-radius: 1rem; box-shadow: 0 1rem 2.5rem rgba(70, 40, 140, .25); padding: .4rem; display: flex; flex-direction: column; min-width: 16rem; }
+.menu-list[hidden] { display: none; }
+.menu-list button { font: inherit; font-size: 1.15rem; text-align: left; background: none; border: 0; color: var(--ink); padding: .7rem .9rem; border-radius: .7rem; cursor: pointer; }
+.menu-list button:hover, .menu-list button:focus-visible { background: var(--track); outline: none; }
+#mReset { color: var(--bad); font-weight: 600; }
+.hide-banner { display: none; background: var(--pop); color: #fff; border-radius: 1rem; padding: .7rem 1.2rem; font-size: 1.2rem; font-weight: 500; }
+.hide-banner button { font: inherit; font-weight: 700; background: #fff; color: var(--pop); border: 0; border-radius: 99px; padding: .2rem 1rem; margin-left: .5rem; cursor: pointer; }
+body.hide-mode .hide-banner { display: block; }
+body.hide-mode [data-id] { cursor: pointer; outline: 2px dashed rgba(232, 51, 111, .35); outline-offset: -2px; border-radius: .4rem; }
 .status { display: flex; align-items: center; gap: .5rem; color: var(--muted); font-size: 1.1rem; }
 .status i { width: .8rem; height: .8rem; border-radius: 50%; background: var(--muted); }
 .status.ok i { background: #22c55e; animation: blink 2s ease-in-out infinite; }

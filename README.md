@@ -1,14 +1,21 @@
-# Be the Boss
+# Bexhill College Business Tycoon
 
-An open evening game for Business Studies. Students make 8 decisions: what to sell (11 products), then location, price, supplier, staff, marketing, ethics, and how to react to a rival (6 options each). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
+An open evening game for Business Studies. Students pick what to sell (11 products), name their business (tap a suggestion or type their own), then make 7 more decisions: location, price, supplier, staff, marketing, ethics, and how to react to a rival (6 options each). Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
 
-A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, what people sold, what they chose at each step, star ratings, and the choice that made the biggest difference.
+A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, a pie chart of what people sold, what they chose at each step, the latest games, the choice that made the biggest difference, and star ratings along the bottom.
 
 Plain HTML, CSS and JavaScript plus a small Node server with no dependencies.
 
 ## Privacy
 
-Nobody types anything. Business names are picked at random from a list. The server stores only the 8 choices, the random business name and the time of each game. It does not store or log names, IP addresses, device details or cookies. Results are held in memory and dropped after 24 hours, or when you reset. (Render itself keeps standard request logs on its side, as any host does.)
+The server stores only the 8 choices, the business name and the time of each game. It does not store or log IP addresses, device details or cookies. Players can type their own business name, so:
+
+- the game asks them not to use their real name, because it goes on the big screen
+- names are limited to 20 letters, numbers and basic punctuation, with no long number strings (phone numbers)
+- a rude-word filter (`cleanName` in `public/model.js`) runs in the game and again on the server; anything it rejects becomes a ready-made name
+- on the dashboard, **hold Shift and click any business name** to swap it for a ready-made one (asks for the `ADMIN_KEY` the first time)
+
+No filter catches everything, so keep an eye on the big screen. Results are held in memory and dropped after 24 hours, or when you reset. (Render itself keeps standard request logs on its side, as any host does.)
 
 ## Run it locally
 

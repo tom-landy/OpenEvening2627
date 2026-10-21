@@ -32,6 +32,30 @@ const NAMES = {
   resell:   ["Second Wind", "Thrift Shift", "Pre-Loved Club", "Rewear Room", "Vintage Vault"],
 };
 
+// ---- Player-typed business names ----
+// Names show on a public screen, so they're kept short and checked for rude
+// words. Words in BLOCK_ANY are caught anywhere in the name; BLOCK_WORD only as
+// whole words, so "Sussex" or "Grape Escape" aren't caught by mistake.
+const BLOCK_ANY = ["fuck", "fuk", "shit", "cunt", "bitch", "wank", "twat", "nigg", "fagg", "retard", "whore", "slut", "nazi", "hitler", "porn", "dildo", "bollock", "spastic", "pussy", "tosser", "piss"];
+const BLOCK_WORD = ["ass", "arse", "arsehole", "dick", "dicks", "cock", "cocks", "tit", "tits", "boob", "boobs", "sex", "sexy", "rape", "fag", "fags", "paki", "spaz", "knob", "prick", "nonce", "kys", "kill", "nob", "jizz", "cum", "milf", "damn", "crap", "bum", "bums", "poo", "pee", "wee"];
+const LEET = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", "$": "s", "!": "i" };
+
+// Returns a tidy name, or null if it can't be used
+function cleanName(raw) {
+  if (typeof raw !== "string") return null;
+  const name = raw.replace(/\s+/g, " ").trim();
+  if (name.length < 2 || name.length > 20) return null;
+  if (!/^[A-Za-z0-9 &'!.,-]+$/.test(name)) return null;
+  if (/\d{5,}/.test(name.replace(/\s/g, ""))) return null; // looks like a phone number
+  const plain = name.toLowerCase().replace(/[013457 8@$!]/g, ch => LEET[ch] || ch).replace(/[^a-z ]/g, "");
+  const words = plain.split(" ").filter(Boolean);
+  // "f u c k" style spacing: also check with the gaps removed
+  const squashed = words.filter(w => w.length === 1).length >= 3 ? plain.replace(/ /g, "") : "";
+  if (BLOCK_ANY.some(b => plain.includes(b) || squashed.includes(b))) return null;
+  if (words.some(w => BLOCK_WORD.includes(w)) || (squashed && BLOCK_WORD.includes(squashed))) return null;
+  return name;
+}
+
 // Every option, with the defaults filled in, so simulate() never needs special cases.
 // Fields left out of an option fall back to the neutral values in fill().
 const LOCATIONS = fill({
@@ -166,4 +190,4 @@ function starRating(profit) {
   return 5;
 }
 
-if (typeof module !== "undefined") module.exports = { simulate, starRating, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL };
+if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL };

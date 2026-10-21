@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Be the Boss</title>
-  <meta name="description" content="Make 8 business decisions and see how your company does in its first year.">
+  <title>Bexhill College Business Tycoon</title>
+  <meta name="description" content="Bexhill College open evening: make 8 business decisions and see how your company does in its first year.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
   <!-- START -->
   <section id="start" class="screen active">
     <div class="start-inner">
-      <p class="kicker" id="kicker">Business Studies · Open Evening</p>
-      <h1>Be the <span>Boss</span></h1>
+      <p class="kicker" id="kicker">Bexhill College · Open Evening</p>
+      <h1>Business <span>Tycoon</span></h1>
       <p class="lead">You've got £5,000 and a big idea.<br>Make <strong>8 decisions</strong>. See if your business survives its first year.</p>
       <div class="start-icons" aria-hidden="true">🧋 🏙️ 💷 ⭐ 👥 📣 ♻️ 🚨</div>
       <button class="big-btn" id="startBtn">Start my business ▶</button>
@@ -79,6 +79,14 @@
           <p class="q-step" id="qStep"></p>
           <h2 id="qTitle"></h2>
           <div class="options" id="options"></div>
+          <div class="naming" id="naming">
+            <div class="n-ideas" id="nIdeas"></div>
+            <form class="n-own" id="nForm" autocomplete="off">
+              <input id="nInput" maxlength="20" placeholder="…or type your own" autocapitalize="words" spellcheck="false" enterkeyhint="go">
+              <button id="nGo" type="submit">Use it ▶</button>
+            </form>
+            <p class="n-note" id="nNote">Keep it fun, and don't use your real name. It goes on the big screen!</p>
+          </div>
           <button class="feedback" id="feedback"><span class="fb-emoji" id="fbEmoji"></span><span class="fb-text" id="fbText"></span><span class="fb-next">Next ▶<i id="fbTimer"></i></span></button>
         </div>
 

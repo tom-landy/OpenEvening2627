@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Be the Boss Live</title>
+  <title>Business Tycoon Live</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="head">
-    <h1>Be the <span>Boss</span> · Live</h1>
+    <h1><span class="college">Bexhill College</span> Business <span class="hl">Tycoon</span> · Live</h1>
     <div class="status" id="status"><i></i><span>Connecting…</span></div>
   </header>
 
@@ -31,21 +31,26 @@
 
     <section class="card products">
       <h2>🛍️ What people sold</h2>
-      <p class="hint">Bar = how many chose it · number = their average profit</p>
-      <div id="products"></div>
+      <div class="pie-wrap">
+        <div class="pie" id="pie"></div>
+        <ul class="pie-legend" id="pieLegend"></ul>
+      </div>
     </section>
-
 
     <section class="card side">
       <div class="insight" id="insight"></div>
-      <h2>⭐ Star ratings</h2>
-      <div class="stars" id="stars"></div>
       <h2>🆕 Just finished</h2>
       <ul class="feed" id="feed"></ul>
     </section>
+
     <section class="card choices">
       <h2>🧠 What everyone chose</h2>
       <div class="choice-grid" id="choices"></div>
+    </section>
+
+    <section class="card stars-card">
+      <h2>⭐ Star ratings</h2>
+      <div class="stars" id="stars"></div>
     </section>
   </main>
 

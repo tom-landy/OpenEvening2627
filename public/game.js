@@ -1,6 +1,6 @@
 // ---- Settings you might want to change ----
 const CONFIG = {
-  kicker: "Business Studies · Open Evening",
+  kicker: "Bexhill College · Open Evening",
   cta: "Want to learn how real businesses make these calls? Ask us about Business Studies!",
   idleSeconds: 90,        // return to the start screen after this long with no taps
   feedbackSeconds: 4,     // how long each consequence card shows before moving on (tap skips)
@@ -9,6 +9,7 @@ const CONFIG = {
 
 const money = n => (n < 0 ? "-£" : "£") + Math.abs(Math.round(n)).toLocaleString("en-GB");
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const call = (v, ...args) => (typeof v === "function" ? v(...args) : v);
 
 // ---- The 8 decisions ----
@@ -17,7 +18,7 @@ const STEPS = [
   {
     key: "product", icon: "🛍️", title: "What will you sell?",
     options: Object.entries(PRODUCTS).map(([id, p]) => ({ id, emoji: p.emoji, label: p.name, sub: p.sub })),
-    fb: s => `Welcome to <b>${s.name}</b>! You've spent £5,000 setting up. Now let's find a home for it.`,
+    fb: s => `Welcome to <b>${esc(s.name)}</b>! You've spent £5,000 setting up. Now let's find a home for it.`,
   },
   ...DECISIONS,
 ];
@@ -98,18 +99,55 @@ function renderStep() {
 function choose(opt, btn) {
   const st = STEPS[step];
   state[st.key] = opt.id;
-  if (st.key === "product") {
-    state.name = pick(NAMES[opt.id]);
-  }
   btn.classList.add("picked");
   $("options").classList.add("locked");
 
   const r = simulate(picks());
   updateScene(st.key, r);
   updateMeters(r);
+  if (st.key === "product") { setTimeout(() => askName(opt.id), 350); return; }
   const fb = feedbackFor(st, opt, r);
   setTimeout(() => showFeedback(fb), 350);
 }
+
+// ---- Naming: tap a suggestion or type one (not counted as one of the 8 decisions) ----
+function askName(product) {
+  const ideas = [...NAMES[product]].sort(() => Math.random() - 0.5).slice(0, 3);
+  $("qTitle").textContent = `What's your ${PRODUCTS[product].name.toLowerCase()} business called?`;
+  $("nIdeas").innerHTML = "";
+  ideas.forEach(n => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "n-idea";
+    b.textContent = n;
+    b.addEventListener("click", () => useName(n));
+    $("nIdeas").appendChild(b);
+  });
+  $("nInput").value = "";
+  $("nNote").classList.remove("warn");
+  $("nNote").textContent = "Keep it fun, and don't use your real name. It goes on the big screen!";
+  $("question").classList.add("naming-now");
+}
+function useName(name) {
+  state.name = name;
+  $("question").classList.remove("naming-now");
+  $("qTitle").textContent = STEPS[0].title;
+  $("sign").textContent = name;
+  $("url").textContent = "www." + (name.toLowerCase().replace(/[^a-z0-9]/g, "") || "mybusiness") + ".co.uk";
+  $("nInput").blur();
+  const st = STEPS[0];
+  showFeedback(feedbackFor(st, st.options.find(o => o.id === state.product), simulate(picks())));
+}
+$("nInput").addEventListener("input", () => $("nNote").classList.remove("warn"));
+$("nForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = cleanName($("nInput").value);
+  if (name) return useName(name);
+  $("nNote").classList.add("warn");
+  $("nNote").textContent = $("nInput").value.trim().length < 2
+    ? "Type a name first, or tap one of the ideas above."
+    : "Hmm, we can't use that one. Try another name (letters and numbers, up to 20).";
+});
 
 function showFeedback(fb) {
   $("fbEmoji").textContent = fb.emoji;
@@ -182,8 +220,6 @@ function updateScene(key, r) {
   const p = PRODUCTS[state.product];
   if (key === "product") {
     document.documentElement.style.setProperty("--shop", p.colour);
-    $("sign").textContent = state.name;
-    $("url").textContent = "www." + state.name.toLowerCase().replace(/[^a-z]/g, "") + ".co.uk";
     $("goods").textContent = p.emoji;
     $("shop").classList.add("show");
   }
@@ -213,8 +249,8 @@ function updateScene(key, r) {
       none: `<div class="bubble">"Have you tried it?"</div>💬`,
       flyers: `<div class="bubble">Grand opening!</div>📄`,
       samples: `<div class="bubble">${isFood(state) ? "Free taste!" : "Free gift!"}</div>🎁`,
-      billboard: `<div class="bubble">${state.name}</div>🪧`,
-      social: `<div class="bubble">#${state.name.replace(/[^A-Za-z]/g, "")}</div>📸<span class="floaty">❤️</span>`,
+      billboard: `<div class="bubble">${esc(state.name)}</div>🪧`,
+      social: `<div class="bubble">#${state.name.replace(/[^A-Za-z0-9]/g, "")}</div>📸<span class="floaty">❤️</span>`,
       influencer: `<div class="bubble">1.2M followers!</div>🤳<span class="floaty">⭐</span>`,
     }[state.marketing];
     $("promo").classList.add("show");
@@ -333,7 +369,7 @@ function renderServerBoard(el, data) {
   if (!data.top.length) { el.innerHTML = ""; return; }
   const me = data.entry ? data.entry.id : null;
   el.innerHTML = `<h3>🏆 Tonight's top businesses${me ? ` · you came #${data.rank} of ${data.total}` : ""}</h3><ol>` +
-    data.top.map(s => `<li class="${s.id === me ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${s.name}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
+    data.top.map(s => `<li class="${s.id === me ? "me" : ""}"><span>${PRODUCTS[s.choices.product].emoji} ${esc(s.name)}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
 }
 
 function lessons(r) {
@@ -412,7 +448,7 @@ function renderBoard(el, me) {
   const top = scores.slice(0, 5);
   const myRank = me ? scores.findIndex(s => s.t === me.t) + 1 : 0;
   el.innerHTML = `<h3>🏆 Tonight's top businesses${myRank ? ` · you came #${myRank} of ${scores.length}` : ""}</h3><ol>` +
-    top.map(s => `<li class="${me && s.t === me.t ? "me" : ""}"><span>${s.emoji} ${s.name}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
+    top.map(s => `<li class="${me && s.t === me.t ? "me" : ""}"><span>${s.emoji} ${esc(s.name)}</span><b>${money(s.profit)}</b></li>`).join("") + "</ol>";
 }
 
 // ---- Idle reset for an unattended screen ----
@@ -425,7 +461,7 @@ function resetIdle() {
 function goHome() {
   clearTimeout(feedbackTimer);
   $("feedback").classList.remove("show");
-  $("question").classList.remove("answered");
+  $("question").classList.remove("answered", "naming-now");
   showStartBoard();
   show("start");
 }

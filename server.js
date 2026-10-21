@@ -1,8 +1,9 @@
 // Serves the game and dashboard, and keeps tonight's results in memory.
 // No dependencies: node server.js
 //
-// Privacy: a result is only the 8 choices, a randomly picked business name and the
-// time. No names, IP addresses, device details or cookies are stored or logged.
+// Privacy: a result is only the 8 choices, the business name and the time. No IP
+// addresses, device details or cookies are stored or logged. Typed business names
+// pass cleanName() in model.js; players are asked not to use their real name.
 
 const http = require("http");
 const fs = require("fs");
@@ -43,7 +44,8 @@ function record(body) {
     if (!allowed.includes(c[k])) return null;
     choices[k] = c[k];
   }
-  const name = M.NAMES[choices.product].includes(body.name) ? body.name : M.NAMES[choices.product][0];
+  // A typed name that fails the filter quietly becomes one of the ready-made ones
+  const name = M.cleanName(body.name) || randomName(choices.product);
   // Work the result out here rather than trusting numbers sent by the browser
   const r = M.simulate(choices);
   const entry = {
@@ -62,6 +64,11 @@ function record(body) {
   const cutoff = Date.now() - KEEP_MS;
   results = results.filter(x => x.t > cutoff).slice(-MAX_RESULTS);
   return entry;
+}
+
+function randomName(product) {
+  const list = M.NAMES[product];
+  return list[Math.floor(Math.random() * list.length)];
 }
 
 function rankOf(entry) {
@@ -124,6 +131,18 @@ http.createServer((req, res) => {
   if (url.pathname === "/api/results" && req.method === "GET") {
     const after = Number(url.searchParams.get("after")) || 0;
     return send(res, 200, { boot: BOOT, seq, now: Date.now(), resetAt, results: results.filter(x => x.seq > after) });
+  }
+
+  // Swap an unsuitable name for a ready-made one. The new seq makes dashboards pick up the change.
+  if (url.pathname === "/api/hide" && req.method === "POST") {
+    if (!ADMIN_KEY || req.headers["x-admin-key"] !== ADMIN_KEY) return send(res, 403, { error: "wrong key" });
+    return readBody(req, body => {
+      const entry = body && results.find(x => x.id === body.id);
+      if (!entry) return send(res, 404, { error: "not found" });
+      entry.name = randomName(entry.choices.product);
+      entry.seq = ++seq;
+      send(res, 200, { ok: true, entry });
+    });
   }
 
   if (url.pathname === "/api/reset" && req.method === "POST") {

@@ -353,3 +353,16 @@ h1 span { color: var(--pop); display: inline-block; animation: wobble 3s ease-in
 .event-card h3 { margin: 0 0 4px; font-size: 18px; color: var(--pop); }
 .event-card p { margin: 0; font-size: 16px; line-height: 1.35; }
 @keyframes shake { 0%, 100% { rotate: 0deg; } 25% { rotate: -3deg; } 75% { rotate: 3deg; } }
+
+/* ticker of tonight's facts along the bottom */
+body.has-ticker { padding-bottom: 48px; }
+.ticker { position: fixed; left: 0; right: 0; bottom: 0; height: 44px; z-index: 30; background: var(--ink); color: #fff; overflow: hidden; display: flex; align-items: center; box-shadow: 0 -4px 18px rgba(31, 26, 61, .25); }
+.ticker[hidden] { display: none; }
+.ticker-track { display: flex; white-space: nowrap; animation: tick var(--ticker-time, 60s) linear infinite; }
+.ticker-track span { padding: 0 34px; font-size: 18px; position: relative; }
+.ticker-track span::after { content: "•"; position: absolute; right: -4px; color: var(--accent); }
+.ticker-track b { color: var(--accent); font-weight: 600; }
+@keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (max-width: 640px) { .ticker { height: 38px; } .ticker-track span { font-size: 15px; padding: 0 24px; } body.has-ticker { padding-bottom: 42px; } }
+/* no scrolling for people who've asked for less motion: show the first fact */
+@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none !important; } }

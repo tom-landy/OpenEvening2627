@@ -401,6 +401,7 @@ async function sendResult(result) {
   try {
     const data = await post(result);
     if (data.top) renderServerBoard($("board"), data);
+    refreshTicker();
   } catch {
     savePending([...loadPending(), result]);
     return;
@@ -536,6 +537,22 @@ function forgetBefore(resetAt) {
   } catch { }
 }
 
+// ---- Ticker along the bottom: facts from tonight's games (insights.js) ----
+async function refreshTicker() {
+  try {
+    const res = await fetch("api/results?after=0", { cache: "no-store" });
+    if (!res.ok) return;
+    const items = buildInsights((await res.json()).results);
+    if (!items.length) { $("ticker").hidden = true; document.body.classList.remove("has-ticker"); return; }
+    // Two copies side by side so the scroll loops without a gap
+    const row = items.map(t => `<span>${t}</span>`).join("");
+    $("tickerTrack").innerHTML = row + row;
+    $("tickerTrack").style.setProperty("--ticker-time", Math.max(30, items.length * 9) + "s");
+    $("ticker").hidden = false;
+    document.body.classList.add("has-ticker");
+  } catch { /* offline: keep whatever is showing */ }
+}
+
 // ---- Fallback leaderboard (stored on this device only, resets each day) ----
 const BOARD_KEY = "beTheBoss.scores";
 function todayScores() {
@@ -587,4 +604,6 @@ $("feedback").addEventListener("click", () => { if (Date.now() - feedbackShownAt
 ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, resetIdle));
 showStartBoard();
 flushPending();
+refreshTicker();
+setInterval(refreshTicker, 60000);
 setInterval(flushPending, 60000);

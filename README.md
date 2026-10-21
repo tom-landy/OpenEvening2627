@@ -2,6 +2,8 @@
 
 An open evening game for Business Studies. Students pick what to sell (12 products), name their business (tap a suggestion or type their own), pick 2 goals from 10 (each changes the year and pays a bonus if the target is hit), then decide location, price, supplier (including making it themselves), staff and marketing. Halfway through the year a surprise event hits (one of 15, picked to suit the business) and they choose how to respond; then ethics and how to react to a rival. Online sellers also choose a courier. Each choice adds to a picture of their shop and moves live meters for customers, reputation and profit. At the end they get their year-one profit, a star rating, a money-in vs money-out chart, the business ideas behind their result (capacity, fixed costs, profit margin, differentiation and so on) and their rank for the night.
 
+A ticker along the bottom of the game screens scrolls facts from tonight's games (`public/insights.js`): totals, the top business, and which choices and event reactions earned the most.
+
 A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, a pie chart of what people sold, what they chose at each step, the latest games, the choice that made the biggest difference, and star ratings along the bottom.
 
 Plain HTML, CSS and JavaScript plus a small Node server with no dependencies.

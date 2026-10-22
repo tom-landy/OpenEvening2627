@@ -104,20 +104,24 @@ const SHIPPING = fill({
   myself:   { perOrder: 0.8, rep: 0.25, capacity: 0.6 },
 }, { perOrder: 0, rep: 0, demand: 1, capacity: 1 });
 
-// Pick 2 at the start. The effect runs all year; hitting the target pays a bonus.
+// Pick 2 at the start. The effect runs all year; hitting the target pays a
+// reward, and some goals charge a penalty if the target is missed.
 // target(choices, result before bonuses) -> true/false
 const OBJECTIVES = fill({
-  profit:    { unitCost: 0.95, rep: -0.25, reward: 2000, target: (c, r) => r.profit >= 30000 },
-  survive:   { marketing: 0.8, demand: 0.97, reward: 1000, target: (c, r) => r.profit >= 0 },
+  profit:    { unitCost: 0.95, rep: -0.25, reward: 2000, penalty: 1500, target: (c, r) => r.profit >= 30000 },
+  survive:   { marketing: 0.8, demand: 0.97, reward: 1000, penalty: 500, target: (c, r) => r.profit >= 0 },
   growth:    { demand: 1.1, monthly: 200, reward: 1500, target: (c, r) => r.customers >= 1.5 * PRODUCTS[c.product].demand },
   stars:     { rep: 0.5, monthly: 150, reward: 1000, target: (c, r) => r.rep >= 4.5 },
   green:     { unitCost: 1.03, rep: 0.25, reward: 2000, target: (c, r) => r.impact.planet >= 4 },
   community: { monthly: 100, rep: 0.25, reward: 1500, target: (c, r) => r.impact.local >= 5 },
   rival:     { price: 0.95, demand: 1.08, reward: 1000, target: c => Boolean(c.rival) && RIVAL[c.rival].demand >= 1 },
   jobs:      { wage: 1.1, reward: 1500, target: c => ["apprentice", "part", "team"].includes(c.staff) },
-  luxury:    { price: 1.05, demand: 0.95, reward: 2000, target: c => ["high", "luxury"].includes(c.price) && QUALITY[c.quality].posh },
+  luxury:    { price: 1.05, demand: 0.95, reward: 2000, penalty: 1000, target: c => ["high", "luxury"].includes(c.price) && QUALITY[c.quality].posh },
   innovate:  { oneOff: 2000, demand: 1.08, reward: 1500, target: c => c.rival === "newidea" || c.quality === "make" },
-}, { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0, reward: 0 });
+  // Traps: they sound good but cost more than they bring for most businesses
+  cheapest:  { price: 0.88, demand: 1.12, reward: 500, target: (c, r) => r.customers >= 1.5 * PRODUCTS[c.product].demand },
+  expand:    { oneOff: 7000, monthly: 400, demand: 1.15, reward: 3000, penalty: 2000, target: (c, r) => r.profit >= 40000 },
+}, { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0, reward: 0, penalty: 0 });
 
 // ---- Surprise events, halfway through the year ----
 // One is drawn at random from those that fit the business; the player picks a
@@ -419,12 +423,14 @@ function simulate(picked, opts = {}) {
   // Goal bonuses are judged on the year before any bonus is paid
   const goalResults = (c.objectives || []).filter(id => OBJECTIVES[id]).map(id => {
     const hit = Boolean(OBJECTIVES[id].target(c, before));
-    return { id, hit, reward: hit ? OBJECTIVES[id].reward : 0 };
+    return { id, hit, reward: hit ? OBJECTIVES[id].reward : -OBJECTIVES[id].penalty };
   });
-  const bonus = goalResults.reduce((a, x) => a + x.reward, 0);
-  const profit = revenue + eventCash + bonus - totalCosts;
+  const bonus = goalResults.reduce((a, x) => a + Math.max(0, x.reward), 0);
+  costs.penalties = goalResults.reduce((a, x) => a - Math.min(0, x.reward), 0);
+  const allCosts = totalCosts + costs.penalties;
+  const profit = revenue + eventCash + bonus - allCosts;
 
-  return { customers, demand, capacity, turnedAway, rep, ripOff, price, unitCost, revenue, eventCash, bonus, costs, totalCosts, profit, impact, goalResults, perOrder: sh.perOrder / basket };
+  return { customers, demand, capacity, turnedAway, rep, ripOff, price, unitCost, revenue, eventCash, bonus, costs, totalCosts: allCosts, profit, impact, goalResults, perOrder: sh.perOrder / basket };
 }
 
 function starRating(profit) {

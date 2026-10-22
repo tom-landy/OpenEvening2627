@@ -23,10 +23,11 @@ const STEPS = [
   },
   {
     key: "objectives", icon: "🎯", title: "Pick 2 goals for your first year", pickCount: 2,
-    options: GOALS.map(g => ({ id: g.id, emoji: g.emoji, label: g.label, sub: `${g.effect}. <b>Hit it: ${g.reward}</b>` })),
+    // Only the aim is shown: what each goal does to the business is revealed at the end
+    options: GOALS.map(g => ({ id: g.id, emoji: g.emoji, label: g.label, sub: `Aim: ${g.target}` })),
     fb: s => {
       const [a, b] = s.objectives.map(id => GOALS.find(g => g.id === id));
-      return { emoji: "🎯", text: `Your goals: <b>${a.label}</b> and <b>${b.label}</b>. They change your year straight away. Hit the targets to win the bonuses!` };
+      return { emoji: "🎯", text: `Your goals: <b>${a.label}</b> and <b>${b.label}</b>. Every goal changes how you run the business, and some come with strings attached. You'll find out at the end!` };
     },
   },
   // The surprise event lands halfway through the year, after marketing
@@ -352,6 +353,7 @@ function finish() {
     ["Fees & extras", r.costs.fees, "#eab308"],
     ["Set-up", r.costs.setup, "#94a3b8"],
     ["Surprise event", r.costs.event, "#ef4444"],
+    ["Goal penalties", r.costs.penalties, "#7f1d1d"],
   ].filter(x => x[1] > 0);
   $("barIn").style.width = "0";
   $("barBonus").style.width = "0";
@@ -453,8 +455,8 @@ function renderGoals(r) {
     const goal = GOALS.find(g => g.id === x.id);
     return `<div class="goal ${x.hit ? "hit" : "miss"}">
       <span class="g-emoji">${goal.emoji}</span>
-      <span class="g-text"><b>${goal.label}</b><small>Target: ${goal.target}</small></span>
-      <span class="g-result">${x.hit ? `✅ ${goal.reward}` : "❌ Missed"}</span>
+      <span class="g-text"><b>${goal.label}</b><small>Target: ${goal.target}</small><small>What it did: ${goal.effect}</small></span>
+      <span class="g-result">${x.hit ? `✅ ${goal.reward}` : `❌ Missed${goal.penalty ? `<small>${goal.penalty}</small>` : ""}`}</span>
     </div>`;
   }).join("");
 }

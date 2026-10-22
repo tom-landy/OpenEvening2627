@@ -13,19 +13,34 @@ const unitWord = s => PRODUCTS[s.product].unit || "each";
 const priceFor = (s, id) => PRODUCTS[s.product].prices[PRICES[id].of] * PRICES[id].mult;
 const isFood = s => PRODUCTS[s.product].staff[0] === "🧑‍🍳";
 
-// Picked after naming the business: choose 2. effect = what it does all year,
-// target = what earns the bonus at the end. Numbers live in OBJECTIVES in model.js.
+// Picked after naming the business: choose 2. Players only see the label and
+// target; effect, reward and penalty are revealed on the results screen.
+// Numbers live in OBJECTIVES in model.js.
 const GOALS = [
-  { id: "profit", phrase: "aimed for £30,000 profit", emoji: "💰", label: "Make £30,000 profit", short: "£30k profit", effect: "Haggle hard: stock 5% cheaper, but suppliers like you less", target: "Profit of £30,000 or more", reward: "£2,000 investor bonus" },
-  { id: "survive", phrase: "aimed just to survive", emoji: "🛟", label: "Survive year one", short: "Survive", effect: "Spend carefully: 20% less on marketing", target: "Don't make a loss", reward: "£1,000 off your bank loan" },
-  { id: "growth", phrase: "aimed to grow fast", emoji: "📈", label: "Grow fast", short: "Grow fast", effect: "10% more customers, £200 a month on promotions", target: "50% more customers than a typical shop like yours", reward: "£1,500 growth grant" },
-  { id: "stars", phrase: "went for five-star reviews", emoji: "⭐", label: "Five-star reviews", short: "5-star reviews", effect: "Better reputation, £150 a month on staff training", target: "Reputation of 4.5 stars or more", reward: "£1,000 business award" },
-  { id: "green", phrase: "set out to go green", emoji: "🌍", label: "Go green", short: "Go green", effect: "Greener stock costs 3% more, customers like it", target: "4 or more trees for the planet", reward: "£2,000 green grant" },
-  { id: "community", phrase: "set out to help the community", emoji: "🏘️", label: "Help the community", short: "Community", effect: "Sponsor a local team for £100 a month", target: "5 houses for the local area", reward: "£1,500 council grant" },
-  { id: "rival", phrase: "set out to beat the competition", emoji: "🥊", label: "Beat the competition", short: "Beat rivals", effect: "Prices 5% lower, 8% more customers", target: "Don't lose customers when a rival opens", reward: "£1,000 market share prize" },
-  { id: "jobs", phrase: "set out to create local jobs", emoji: "👷", label: "Create local jobs", short: "Create jobs", effect: "Training new staff adds 10% to wages", target: "Employ an apprentice, a part-timer or a team", reward: "£1,500 hiring incentive" },
-  { id: "luxury", phrase: "built a luxury brand", emoji: "💎", label: "Build a luxury brand", short: "Luxury brand", effect: "Prices 5% higher, 5% fewer customers", target: "Premium or luxury prices with top-quality stock", reward: "£2,000 brand deal" },
-  { id: "innovate", phrase: "set out to innovate", emoji: "💡", label: "Be the most innovative", short: "Innovate", effect: "£2,000 on new ideas, 8% more customers", target: "Make your own stock or launch something new", reward: "£1,500 innovation grant" },
+  { id: "profit", phrase: "aimed for £30,000 profit", emoji: "💰", label: "Make £30,000 profit", short: "£30k profit", target: "Profit of £30,000 or more",
+    effect: "You haggled hard: stock 5% cheaper, but suppliers like you less", reward: "£2,000 investor bonus", penalty: "Your investor pulls out: -£1,500" },
+  { id: "survive", phrase: "aimed just to survive", emoji: "🛟", label: "Survive year one", short: "Survive", target: "Don't make a loss",
+    effect: "You spent carefully: 20% less on marketing", reward: "£1,000 off your bank loan", penalty: "Bank charges for going overdrawn: -£500" },
+  { id: "growth", phrase: "aimed to grow fast", emoji: "📈", label: "Grow fast", short: "Grow fast", target: "50% more customers than a typical shop like yours",
+    effect: "10% more customers, £200 a month on promotions", reward: "£1,500 growth grant" },
+  { id: "stars", phrase: "went for five-star reviews", emoji: "⭐", label: "Five-star reviews", short: "5-star reviews", target: "A reputation of 4.5 stars or more",
+    effect: "Better reputation, £150 a month on staff training", reward: "£1,000 business award" },
+  { id: "green", phrase: "set out to go green", emoji: "🌍", label: "Go green", short: "Go green", target: "4 or more trees for the planet",
+    effect: "Greener stock cost 3% more, customers liked it", reward: "£2,000 green grant" },
+  { id: "community", phrase: "set out to help the community", emoji: "🏘️", label: "Help the community", short: "Community", target: "5 houses for the local area",
+    effect: "You sponsored a local team for £100 a month", reward: "£1,500 council grant" },
+  { id: "rival", phrase: "set out to beat the competition", emoji: "🥊", label: "Beat the competition", short: "Beat rivals", target: "Don't lose customers when a rival opens",
+    effect: "Prices 5% lower, 8% more customers", reward: "£1,000 market share prize" },
+  { id: "jobs", phrase: "set out to create local jobs", emoji: "👷", label: "Create local jobs", short: "Create jobs", target: "Employ an apprentice, a part-timer or a team",
+    effect: "Training new staff added 10% to wages", reward: "£1,500 hiring incentive" },
+  { id: "luxury", phrase: "built a luxury brand", emoji: "💎", label: "Build a luxury brand", short: "Luxury brand", target: "Premium or luxury prices with top-quality stock",
+    effect: "Prices 5% higher, 5% fewer customers", reward: "£2,000 brand deal", penalty: "The brand deal collapses: -£1,000" },
+  { id: "innovate", phrase: "set out to innovate", emoji: "💡", label: "Be the most innovative", short: "Innovate", target: "Make your own stock or launch something new",
+    effect: "£2,000 spent on new ideas, 8% more customers", reward: "£1,500 innovation grant" },
+  { id: "cheapest", phrase: "tried to be the cheapest in town", emoji: "🏷️", label: "Be the cheapest in town", short: "Cheapest", target: "50% more customers than a typical shop like yours",
+    effect: "Prices 12% lower on everything, only 12% more customers", reward: "£500 'best value' award" },
+  { id: "expand", phrase: "opened a second shop", emoji: "🏢", label: "Open a second shop", short: "Second shop", target: "Profit of £40,000 or more to pay for it",
+    effect: "£7,000 to fit out and £400 a month rent, 15% more customers", reward: "£3,000 from the bank to grow again", penalty: "Loan charges you can't cover: -£2,000" },
 ];
 
 const DECISIONS = [

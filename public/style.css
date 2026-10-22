@@ -329,7 +329,8 @@ h1 span { color: var(--pop); display: inline-block; animation: wobble 3s ease-in
 .g-emoji { font-size: 26px; }
 .g-text { display: flex; flex-direction: column; line-height: 1.2; }
 .g-text small { color: var(--muted); font-size: 13px; }
-.g-result { font-weight: 600; font-size: 15px; text-align: right; }
+.g-result { font-weight: 600; font-size: 15px; text-align: right; display: flex; flex-direction: column; }
+.g-result small { font-weight: 500; font-size: 13px; }
 .goal.hit .g-result { color: var(--good); }
 .goal.miss .g-result { color: var(--bad); }
 

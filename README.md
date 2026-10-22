@@ -37,7 +37,7 @@ Game: http://localhost:3000 · Dashboard: http://localhost:3000/dashboard
 ## On the night
 
 - **Open the dashboard on the big screen first**, about 10 minutes before doors open. Render's free plan puts the app to sleep after 15 minutes with no visitors and takes up to a minute to wake. The dashboard checks in every few seconds, so it keeps the app awake all evening.
-- Results live in the server's memory, so a restart or redeploy clears them. Any dashboard that was open sends its copy back to the server within a few seconds, so every screen agrees again. Still, don't push changes during the event.
+- Results live in the server's memory, so a restart or redeploy clears them. Every game device and dashboard sends its copy back within a minute, so nothing is lost as long as they stay switched on. Still, don't push changes during the event.
 - If the wifi drops, game devices save finished games and send them when the connection comes back.
 - **Reset the leaderboard** (do this before doors open to clear test games): on the dashboard, open the **☰ menu** (top right) → **Reset leaderboard**, and enter the `ADMIN_KEY` from Render → your service → Environment. This clears the server, every dashboard, and the leaderboard on every game device. If there's no `ADMIN_KEY` there, add one; Render restarts the service when you save. (Shortcut on a keyboard: Shift+R.)
 - If nobody touches a game screen for 90 seconds it goes back to the start screen.

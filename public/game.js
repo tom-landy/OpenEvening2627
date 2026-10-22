@@ -402,6 +402,7 @@ async function sendResult(result) {
   try {
     const data = await post(result);
     if (data.top) renderServerBoard($("board"), data);
+    if (data.entry) rememberMine(data.entry);
     refreshTicker();
   } catch {
     savePending([...loadPending(), result]);
@@ -535,7 +536,31 @@ function forgetBefore(resetAt) {
     localStorage.setItem(RESET_KEY, String(resetAt));
     localStorage.setItem(BOARD_KEY, JSON.stringify(todayScores().filter(s => s.t > resetAt)));
     savePending(loadPending().filter(p => p.t > resetAt));
+    saveMine(loadMine().filter(m => m.t > resetAt));
   } catch { }
+}
+
+// ---- Games this device played, so they survive a server restart ----
+// The server keeps results in memory. If it restarts (a redeploy, or Render
+// waking it), every device sends back its own games from tonight.
+const MINE_KEY = "beTheBoss.mine", BOOT_KEY = "beTheBoss.boot";
+function loadMine() {
+  try { return JSON.parse(localStorage.getItem(MINE_KEY) || "[]").filter(m => m.t > Date.now() - 18 * 3600000); } catch { return []; }
+}
+function saveMine(list) {
+  try { localStorage.setItem(MINE_KEY, JSON.stringify(list.slice(-100))); } catch { }
+}
+function rememberMine(e) {
+  saveMine([...loadMine().filter(m => m.id !== e.id), { id: e.id, t: e.t, name: e.name, choices: e.choices }]);
+}
+async function checkRestart(boot) {
+  let known = null;
+  try { known = localStorage.getItem(BOOT_KEY); localStorage.setItem(BOOT_KEY, boot); } catch { }
+  if (!known || known === boot) return false;
+  const mine = loadMine();
+  if (!mine.length) return false;
+  await fetch("api/restore", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ results: mine }) }).catch(() => null);
+  return true;
 }
 
 // ---- Ticker along the bottom: facts from tonight's games (insights.js) ----
@@ -543,7 +568,10 @@ async function refreshTicker() {
   try {
     const res = await fetch("api/results?after=0", { cache: "no-store" });
     if (!res.ok) return;
-    const facts = buildInsights((await res.json()).results);
+    const data = await res.json();
+    // Server restarted? Hand back this device's games, then fetch again
+    if (data.boot && (await checkRestart(data.boot))) return refreshTicker();
+    const facts = buildInsights(data.results);
     const items = facts.length ? facts : TICKER_TIPS;
     tickerItems = items;
     $("ticker").hidden = false;

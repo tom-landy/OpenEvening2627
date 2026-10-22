@@ -365,5 +365,6 @@ body.has-ticker { padding-bottom: 48px; }
 .ticker-track b { color: var(--accent); font-weight: 600; }
 @keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (max-width: 640px) { .ticker { height: 38px; } .ticker-track span { font-size: 15px; padding: 0 24px; } body.has-ticker { padding-bottom: 42px; } }
-/* no scrolling for people who've asked for less motion: show the first fact */
-@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none !important; } }
+/* less motion: game.js shows one fact at a time instead of scrolling */
+@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none !important; width: 100%; justify-content: center; } }
+.ticker-track span.one::after { content: none; }

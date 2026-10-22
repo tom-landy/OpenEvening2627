@@ -545,14 +545,28 @@ async function refreshTicker() {
     if (!res.ok) return;
     const facts = buildInsights((await res.json()).results);
     const items = facts.length ? facts : TICKER_TIPS;
+    tickerItems = items;
+    $("ticker").hidden = false;
+    document.body.classList.add("has-ticker");
+    if (lessMotion.matches) return showTickerItem();
     // Two copies side by side so the scroll loops without a gap
     const row = items.map(t => `<span>${t}</span>`).join("");
     $("tickerTrack").innerHTML = row + row;
     $("tickerTrack").style.setProperty("--ticker-time", Math.max(30, items.length * 9) + "s");
-    $("ticker").hidden = false;
-    document.body.classList.add("has-ticker");
   } catch { /* offline: keep whatever is showing */ }
 }
+
+// Computers set to reduce motion (often the default on managed PCs) get one
+// fact at a time, changing every few seconds, instead of a scrolling line
+const lessMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+let tickerItems = [], tickerIndex = 0;
+function showTickerItem() {
+  if (!tickerItems.length) return;
+  tickerIndex = (tickerIndex + 1) % tickerItems.length;
+  $("tickerTrack").innerHTML = `<span class="one">${tickerItems[tickerIndex]}</span>`;
+}
+setInterval(() => { if (lessMotion.matches) showTickerItem(); }, 5000);
+lessMotion.addEventListener?.("change", refreshTicker);
 
 // ---- Fallback leaderboard (stored on this device only, resets each day) ----
 const BOARD_KEY = "beTheBoss.scores";

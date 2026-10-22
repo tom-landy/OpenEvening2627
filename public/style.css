@@ -82,7 +82,7 @@ h1 span { color: var(--pop); display: inline-block; animation: wobble 3s ease-in
   .topbar { padding: 10px 12px 4px; }
   .steps { width: 100%; justify-content: space-between; }
   .steps li { width: 34px; height: 34px; font-size: 16px; }
-  .meters { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .meters { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
   .meter { min-width: 0; padding: 6px 8px; gap: 6px; }
   .m-icon { font-size: 18px; }
   .m-label { font-size: 9px; }

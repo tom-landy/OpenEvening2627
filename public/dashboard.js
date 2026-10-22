@@ -104,6 +104,7 @@ function render() {
   renderChoices(all);
   renderStars(all);
   renderGoals(all);
+  renderEvents(all);
   renderInsight(all);
 
   // Latest game, under the count, so new arrivals are visible
@@ -125,7 +126,11 @@ const PIE_SLOTS = SLICE_COLOURS.length;
 function renderProducts(all) {
   const rows = Object.entries(PRODUCTS).map(([id, p]) => {
     const list = all.filter(r => r.choices.product === id);
-    return { p, n: list.length, avg: avg(list) };
+    return {
+      p, n: list.length, avg: avg(list),
+      win: list.length ? Math.round((100 * list.filter(r => r.profit > 0).length) / list.length) : 0,
+      best: list.length ? Math.max(...list.map(r => r.profit)) : 0,
+    };
   }).sort((a, b) => b.n - a.n || a.p.name.localeCompare(b.p.name));
   rows.forEach((r, i) => (r.colour = i < PIE_SLOTS && r.n ? SLICE_COLOURS[i] : OTHER_COLOUR));
 
@@ -148,12 +153,14 @@ function renderProducts(all) {
       <circle r="${R}" cx="50" cy="50" fill="none" stroke="var(--track)" stroke-width="18"></circle>${arcs}</svg>
     <div class="pie-centre"><b>${total}</b><span>businesses</span></div>`;
 
-  $("pieLegend").innerHTML = `<li class="head"><span></span><span></span><span>Business</span><span>Chose</span><span>Avg profit</span></li>` +
+  $("pieLegend").innerHTML = `<li class="head"><span></span><span></span><span>Business</span><span>Chose</span><span>In profit</span><span>Average</span><span>Best</span></li>` +
     rows.map(r => `
-    <li class="${r.n ? "" : "zero"}" title="${r.n} chose ${r.p.name}, average profit ${money(r.avg)}">
+    <li class="${r.n ? "" : "zero"}" title="${r.n} chose ${r.p.name}: ${r.win}% made a profit, average ${money(r.avg)}, best ${money(r.best)}">
       <span class="sw" style="--c:${r.colour}"></span><span>${r.p.emoji}</span><span class="nm">${r.p.name}</span>
       <em>${total ? Math.round((100 * r.n) / total) : 0}%</em>
+      <em>${r.n ? r.win + "%" : "–"}</em>
       <b class="${r.avg < 0 ? "neg" : ""}">${r.n ? money(r.avg) : "–"}</b>
+      <b class="${r.best < 0 ? "neg" : ""}">${r.n ? money(r.best) : "–"}</b>
     </li>`).join("");
 }
 
@@ -209,11 +216,42 @@ function renderStars(all) {
   const counts = [1, 2, 3, 4, 5].map(s => all.filter(r => r.stars === s).length);
   const max = Math.max(1, ...counts);
   $("stars").innerHTML = counts.map((n, i) => `
-    <div class="star-tile" title="${n} businesses got ${i + 1} star${i ? "s" : ""}">
-      <span class="s">${"★".repeat(i + 1)}<i>${"★".repeat(4 - i)}</i></span><span class="n">${n}</span>
-      <span class="t">${STAR_TITLES[i]}${all.length ? ` · ${Math.round((100 * n) / all.length)}%` : ""}</span>
+    <div class="srow" title="${n} businesses got ${i + 1} star${i ? "s" : ""}: ${STAR_TITLES[i]}">
+      <span class="s">${"★".repeat(i + 1)}<i>${"★".repeat(4 - i)}</i></span>
       <div class="sbar"><i style="width:${(100 * n) / max}%"></i></div>
+      <b>${n}</b><em>${all.length ? Math.round((100 * n) / all.length) : 0}%</em>
     </div>`).join("");
+}
+
+// Surprise events: how often each came up and which reaction was worth most,
+// measured against doing nothing (worked out from each game's choices, once)
+const worthCache = {};
+function responseWorth(r) {
+  if (worthCache[r.id] === undefined) {
+    try { worthCache[r.id] = simulate(r.choices).profit - simulate(r.choices, { response: null }).profit; } catch { worthCache[r.id] = 0; }
+  }
+  return worthCache[r.id];
+}
+function renderEvents(all) {
+  const games = all.filter(r => r.choices.event && EVENT_TEXT[r.choices.event]);
+  const byEvent = {};
+  games.forEach(r => (byEvent[r.choices.event] = byEvent[r.choices.event] || []).push(r));
+  const top = Object.entries(byEvent).sort((a, b) => b[1].length - a[1].length).slice(0, 6);
+  $("events").innerHTML = top.map(([id, list]) => {
+    const t = EVENT_TEXT[id];
+    const byResp = {};
+    list.forEach(r => (byResp[r.choices.response] = byResp[r.choices.response] || []).push(responseWorth(r)));
+    const best = Object.entries(byResp).filter(([, w]) => w.length >= 2)
+      .map(([rid, w]) => ({ rid, worth: w.reduce((a, b) => a + b, 0) / w.length }))
+      .sort((a, b) => b.worth - a.worth)[0];
+    const resp = best && t.responses[best.rid];
+    const label = resp && (typeof resp.label === "function" ? resp.label(list.find(r => r.choices.response === best.rid).choices) : resp.label);
+    const title = typeof t.title === "function" ? t.title(list[0].choices) : t.title;
+    return `<div class="ev">
+      <div class="ev-head"><span>${t.emoji}</span><b>${esc(title.replace(/!$/, ""))}</b><em>×${list.length}</em></div>
+      <div class="ev-best">${best ? `Best: ${resp.emoji} ${esc(label)} <b class="${best.worth < 0 ? "neg" : "pos"}">${best.worth >= 0 ? "+" : "-"}${money(Math.abs(best.worth)).replace("-", "")}</b>` : "<span>Too early to tell</span>"}</div>
+    </div>`;
+  }).join("") || `<p class="ev-empty">No surprises yet.</p>`;
 }
 
 // The single choice that made the biggest difference to profit tonight

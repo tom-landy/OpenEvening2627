@@ -4,6 +4,7 @@ const CONFIG = {
   cta: "Want to learn how real businesses make these calls? Ask us about Business Studies!",
   idleSeconds: 90,        // return to the start screen after this long with no taps
   feedbackSeconds: 4,     // how long each consequence card shows before moving on (tap skips)
+  showProfitDuringGame: false, // false keeps profit a surprise until the results screen
 };
 
 
@@ -218,12 +219,13 @@ function resetMeters() {
   $("mCustomers").querySelector(".bar i").style.width = "0";
 }
 
-function updateMeters(r) {
+function updateMeters(r, reveal = false) {
   const prev = lastResult;
   setMeter("mCustomers", r.customers.toLocaleString("en-GB"), prev && r.customers - prev.customers);
   $("mCustomers").querySelector(".bar i").style.width = Math.min(100, (50 * r.customers) / PRODUCTS[state.product].demand) + "%";
   $("mRep").querySelector(".m-val").textContent = starText(r.rep);
-  setMeter("mProfit", money(r.profit), prev && r.profit - prev.profit);
+  if (CONFIG.showProfitDuringGame || reveal) setMeter("mProfit", money(r.profit), prev && r.profit - prev.profit);
+  else setMeter("mProfit", "🔒 Secret", 0);
   lastResult = r;
 }
 function setMeter(id, text, delta) {
@@ -330,7 +332,7 @@ function finish() {
   const stars = starRating(r.profit);
   $("panel").classList.add("done");
   // The meters showed changes step by step; at the end just show the final numbers
-  updateMeters(r);
+  updateMeters(r, true);
   document.querySelectorAll(".m-val").forEach(v => v.classList.remove("up", "down"));
   $("mProfit").querySelector(".m-val").classList.toggle("down", r.profit < 0);
 

@@ -1,21 +1,22 @@
 // The business model behind the game. All numbers are per month unless noted.
 // Kept separate from the UI so it can be tuned (and tested with node sim.js).
 
-// unit: what one sale is. staff: who appears in the shop window.
+// unitCost: what one item costs to make or buy (standard supplier). Prices are
+// worked out from it (see PRICES). unit: what one sale is. staff: who appears.
 const FOOD = ["🧑‍🍳", "👩‍🍳", "👨‍🍳"], SHOP = ["🧑‍💼", "👩‍💼", "👨‍💼"];
 const PRODUCTS = {
-  bubble:   { name: "Bubble Tea",      emoji: "🧋", demand: 2800, unitCost: 1.2, prices: { low: 2.5, mid: 3.8, high: 5.5 },  colour: "#ff7eb6", sub: "Cheap to make, loads of fans", staff: FOOD },
-  burger:   { name: "Burgers",         emoji: "🍔", demand: 1800, unitCost: 2.8, prices: { low: 5, mid: 6.5, high: 9 },      colour: "#ffb347", sub: "Everyone's hungry, pricey ingredients", staff: FOOD },
-  phone:    { name: "Phone Cases",     emoji: "📱", demand: 650,  unitCost: 2,   prices: { low: 5, mid: 9, high: 15 },       colour: "#7ec8ff", sub: "Fewer buyers, big mark-up", staff: SHOP },
-  pizza:    { name: "Pizza",           emoji: "🍕", demand: 850,  unitCost: 3,   prices: { low: 6, mid: 9, high: 13 },       colour: "#ff6b57", sub: "Big orders, hot ovens", staff: FOOD },
-  cupcake:  { name: "Cupcakes",        emoji: "🧁", demand: 3000, unitCost: 0.9, prices: { low: 2.2, mid: 3.4, high: 5 },      colour: "#c58cff", sub: "Small treats, sold by the dozen", staff: FOOD },
-  icecream: { name: "Ice Cream",       emoji: "🍦", demand: 3000, unitCost: 0.8, prices: { low: 2.2, mid: 3.2, high: 4.8 },  colour: "#7fe0d0", sub: "Everyone loves it, mostly in summer", staff: FOOD },
-  trainers: { name: "Custom Trainers", emoji: "👟", demand: 100,  unitCost: 35,  prices: { low: 60, mid: 85, high: 130 },    colour: "#ff9f43", sub: "Few sales, huge price tag", staff: SHOP },
-  tshirt:   { name: "Printed T-shirts", emoji: "👕", demand: 400, unitCost: 6,   prices: { low: 12, mid: 18, high: 28 },     colour: "#5fa8ff", sub: "Design it once, print it lots", staff: SHOP },
-  gaming:   { name: "Gaming Café",     emoji: "🎮", demand: 1200, unitCost: 0.8, prices: { low: 3, mid: 5, high: 8 },        colour: "#8f7bff", sub: "Sell hours of play, not things", staff: SHOP, unit: "an hour" },
-  plants:   { name: "House Plants",    emoji: "🪴", demand: 700,  unitCost: 4,   prices: { low: 7, mid: 11, high: 18 },      colour: "#6fd36f", sub: "Calm customers, careful stock", staff: SHOP },
-  resell:   { name: "Second-hand Reseller", emoji: "👚", demand: 580, unitCost: 5, prices: { low: 9, mid: 14, high: 22 },  colour: "#f4a6c8", sub: "Buy pre-loved clothes cheap, sell them on", staff: SHOP },
-  dogs:     { name: "Posh Dog Treats", emoji: "🐶", demand: 650, unitCost: 2, prices: { low: 6, mid: 9, high: 14 },  colour: "#c8935a", sub: "A small niche, but dog owners are loyal", staff: FOOD },
+  bubble:   { name: "Bubble Tea",      emoji: "🧋", demand: 2800, unitCost: 1.62, colour: "#ff7eb6", sub: "Cheap to make, loads of fans", staff: FOOD },
+  burger:   { name: "Burgers",         emoji: "🍔", demand: 1800, unitCost: 2.01, colour: "#ffb347", sub: "Everyone's hungry, pricey ingredients", staff: FOOD },
+  phone:    { name: "Phone Cases",     emoji: "📱", demand: 650,  unitCost: 3.95, colour: "#7ec8ff", sub: "Fewer buyers, big mark-up", staff: SHOP },
+  pizza:    { name: "Pizza",           emoji: "🍕", demand: 850,  unitCost: 3.22, colour: "#ff6b57", sub: "Big orders, hot ovens", staff: FOOD },
+  cupcake:  { name: "Cupcakes",        emoji: "🧁", demand: 3000, unitCost: 1.57, colour: "#c58cff", sub: "Small treats, sold by the dozen", staff: FOOD },
+  icecream: { name: "Ice Cream",       emoji: "🍦", demand: 3000, unitCost: 1.57, colour: "#7fe0d0", sub: "Everyone loves it, mostly in summer", staff: FOOD },
+  trainers: { name: "Custom Trainers", emoji: "👟", demand: 100,  unitCost: 22.23, colour: "#ff9f43", sub: "Few sales, huge price tag", staff: SHOP },
+  tshirt:   { name: "Printed T-shirts", emoji: "👕", demand: 400, unitCost: 5.95, colour: "#5fa8ff", sub: "Design it once, print it lots", staff: SHOP },
+  gaming:   { name: "Gaming Café",     emoji: "🎮", demand: 1200, unitCost: 2.54, colour: "#8f7bff", sub: "Sell hours of play, not things", staff: SHOP, unit: "an hour" },
+  plants:   { name: "House Plants",    emoji: "🪴", demand: 700,  unitCost: 3.75, colour: "#6fd36f", sub: "Calm customers, careful stock", staff: SHOP },
+  resell:   { name: "Second-hand Reseller", emoji: "👚", demand: 580, unitCost: 4.33, colour: "#f4a6c8", sub: "Buy pre-loved clothes cheap, sell them on", staff: SHOP },
+  dogs:     { name: "Posh Dog Treats", emoji: "🐶", demand: 650, unitCost: 3.95, colour: "#c8935a", sub: "A small niche, but dog owners are loyal", staff: FOOD },
 };
 
 // Business names are picked at random from these lists, so players never type anything.
@@ -66,19 +67,23 @@ const LOCATIONS = fill({
   college: { footfall: 1.0, rent: 800 },
   market:  { footfall: 0.75, rent: 250 },
   van:     { footfall: 0.9, rent: 600, marketingBoost: 1.3 },
-  online:  { footfall: 1.0, rent: 100, fee: 0.1, marketingBoost: 1.8 },
+  online:  { footfall: 1.1, rent: 100, fee: 0.08, marketingBoost: 1.8 },
 }, { fee: 0, marketingBoost: 1 });
 
-// of: which of the product's three prices it starts from. premiumDemand: used
-// instead of demand when the quality really is premium.
+// margin: the share of each sale left after paying for (standard) stock. It's
+// the same for every product so they compete on a level playing field; the
+// price is worked out from it. premiumDemand: used instead of demand when the
+// quality really is premium.
 const PRICES = fill({
-  rock:   { of: "low",  mult: 0.8,  demand: 2.2 },
-  low:    { of: "low",  mult: 1,    demand: 1.65 },
-  pwyw:   { of: "mid",  mult: 0.8,  demand: 1.35, rep: 0.5 },
-  mid:    { of: "mid",  mult: 1,    demand: 1 },
-  high:   { of: "high", mult: 1,    demand: 0.45, premiumDemand: 0.75 },
-  luxury: { of: "high", mult: 1.6,  demand: 0.12, premiumDemand: 0.3 },
+  rock:   { margin: 0.35, demand: 2.2 },
+  low:    { margin: 0.5,  demand: 1.65 },
+  pwyw:   { margin: 0.58, demand: 1.35, rep: 0.5 },
+  mid:    { margin: 0.65, demand: 1 },
+  high:   { margin: 0.76, demand: 0.45, premiumDemand: 0.75 },
+  luxury: { margin: 0.85, demand: 0.12, premiumDemand: 0.3 },
 }, { rep: 0 });
+// Selling price for a product at a price level
+const priceOf = (product, level) => PRODUCTS[product].unitCost / (1 - PRICES[level].margin);
 const PRICE_DEMAND = PRICES; // older name, kept for anything still using it
 
 const QUALITY = fill({
@@ -131,7 +136,7 @@ const OBJECTIVES = fill({
 // can be a function of the choices so one event can hit businesses differently.
 const COLD = ["bubble", "icecream"], HOT = ["pizza", "burger"];
 const isShop = c => c.location !== "online";
-const orderValue = c => 0.4 * PRODUCTS[c.product].demand * (PRODUCTS[c.product].prices.mid - PRODUCTS[c.product].unitCost);
+const orderValue = c => 0.4 * PRODUCTS[c.product].demand * (priceOf(c.product, "mid") - PRODUCTS[c.product].unitCost);
 const EVENTS = {
   heatwave: { months: 3, demand: c => (COLD.includes(c.product) ? 1.4 : HOT.includes(c.product) ? 0.7 : 0.9), responses: {
     machine: { oneOff: 1500, demand: 1.2, capacity: 1.25 },
@@ -399,9 +404,9 @@ function simulate(picked, opts = {}) {
   const customers = Math.min(demand, capacity);
   const turnedAway = Math.max(0, demand - capacity);
 
-  const price = p.prices[pr.of] * pr.mult * rv.priceCut * g.price * ev.price;
+  const price = priceOf(c.product, c.price) * rv.priceCut * g.price * ev.price;
   const unitCost = p.unitCost * q.cost * g.unitCost * ev.unitCost + eth.extraUnit;
-  const basket = Math.max(1, 10 / p.prices.mid); // items per parcel
+  const basket = Math.max(1, 10 / priceOf(c.product, "mid")); // items per parcel
 
   const revenue = customers * price * 12;
   const costs = {
@@ -463,4 +468,4 @@ function validChoices(c) {
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, validChoices, impactOf, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, SHIPPING, OBJECTIVES, EVENTS, eventsFor, eventEffect };
+if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, validChoices, impactOf, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, SHIPPING, OBJECTIVES, EVENTS, eventsFor, eventEffect, priceOf };

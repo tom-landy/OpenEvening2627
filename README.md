@@ -50,4 +50,5 @@ Game: http://localhost:3000 · Dashboard: http://localhost:3000/dashboard
 - Adding an option means adding it in `public/options.js` and giving it numbers under the same id in `public/model.js`.
 - Surprise events: wording in `EVENT_TEXT` in `public/options.js`, numbers in `EVENTS` in `public/model.js`. `node tools/sim.js` shows what each response is worth on average compared with doing nothing.
 - Goals: wording in `GOALS` in `public/options.js`, effects, targets and bonuses in `OBJECTIVES` in `public/model.js`.
-- Products, business names and all the numbers (prices, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play a million random games (takes a few seconds) and check the spread of star ratings and that no product is far ahead of the rest.
+- Price levels are a margin (share of each sale kept after stock) that is the same for every product, so products compete on a level playing field; each product's price comes from its `unitCost`. Change margins in `PRICES` in `public/model.js`.
+- Products, business names and all the numbers (stock costs, rent, wages, demand): `public/model.js`. After changing them, run `node tools/sim.js` to play a million random games (takes a few seconds) and check the spread of star ratings and that no product is far ahead of the rest.

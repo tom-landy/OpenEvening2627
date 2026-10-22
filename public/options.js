@@ -10,10 +10,10 @@
 
 const pounds = n => "£" + (n >= 20 && n % 1 === 0 ? n : n.toFixed(2));
 const unitWord = s => PRODUCTS[s.product].unit || "each";
-const priceFor = (s, id) => PRODUCTS[s.product].prices[PRICES[id].of] * PRICES[id].mult;
-// Share of each £1 left after paying for stock, as "40p"
-const pence = share => Math.max(0, Math.round(100 * share)) + "p";
-const keepOf = (s, id) => pence(1 - PRODUCTS[s.product].unitCost / priceFor(s, id));
+const priceFor = (s, id) => priceOf(s.product, id);
+// Share of each sale left after paying for stock, as "40%"
+const pct = share => Math.max(0, Math.round(100 * share)) + "%";
+const keepOf = (s, id) => pct(PRICES[id].margin);
 const isFood = s => PRODUCTS[s.product].staff[0] === "🧑‍🍳";
 
 // Picked after naming the business: choose 2. Players only see the label and
@@ -61,7 +61,7 @@ const DECISIONS = [
       { id: "van", emoji: "🚐", label: "Pop-up van", short: "Pop-up van", phrase: "ran a pop-up van",
         sub: "Go to events, £600 a month", fb: "Festivals, matches, fairs: you go where the crowds are. Adverts tell them where you'll be." },
       { id: "online", emoji: "💻", label: "Online only", short: "Online only", phrase: "went online only",
-        sub: "Tiny rent, but apps take 10% of sales", fb: "Hardly any rent! But nobody walks past a website. People need to find you." },
+        sub: "Tiny rent, but apps take 8% of sales", fb: "Hardly any rent! But nobody walks past a website. People need to find you." },
     ],
   },
   {
@@ -87,34 +87,34 @@ const DECISIONS = [
   },
   {
     key: "price", name: "Price", icon: "💷", title: "How much will you charge?",
-    desc: "Every product costs something to make. The higher your price, the more of each £1 you keep, but the fewer people buy.",
-    // Shown as how much of each £1 is left after paying for stock (standard
-    // supplier), so a £4 ice cream and an £85 trainer can be compared fairly
+    desc: "Every product costs something to make. The higher your price, the more of each sale you keep, but the fewer people buy.",
+    // Shown as the share of each sale kept after paying for stock. It's the
+    // same for every product, so everyone competes on a level playing field
     options: [
       { id: "rock", emoji: "📉", label: "Rock bottom", short: "Rock bottom", phrase: "charged rock-bottom prices",
-        sub: s => `Keep ${keepOf(s, "rock")} of every £1. Cheapest in town` },
+        sub: s => `Keep ${keepOf(s, "rock")} of each sale. Cheapest in town` },
       { id: "low", emoji: "🏷️", label: "Bargain", short: "Bargain", phrase: "charged bargain prices",
-        sub: s => `Keep ${keepOf(s, "low")} of every £1. Crowds love a deal` },
+        sub: s => `Keep ${keepOf(s, "low")} of each sale. Crowds love a deal` },
       { id: "pwyw", emoji: "🤲", label: "Pay what you want", short: "Pay what you want", phrase: "let people pay what they want",
-        sub: s => `Keep about ${keepOf(s, "pwyw")} of every £1. People love it` },
+        sub: s => `Keep about ${keepOf(s, "pwyw")} of each sale. People love it` },
       { id: "mid", emoji: "⚖️", label: "Fair price", short: "Fair", phrase: "charged a fair price",
-        sub: s => `Keep ${keepOf(s, "mid")} of every £1. Same as most places` },
+        sub: s => `Keep ${keepOf(s, "mid")} of each sale. Same as most places` },
       { id: "high", emoji: "💎", label: "Premium", short: "Premium", phrase: "charged premium prices",
-        sub: s => `Keep ${keepOf(s, "high")} of every £1. Fewer buyers` },
+        sub: s => `Keep ${keepOf(s, "high")} of each sale. Fewer buyers` },
       { id: "luxury", emoji: "👑", label: "Luxury", short: "Luxury", phrase: "charged luxury prices",
-        sub: s => `Keep ${keepOf(s, "luxury")} of every £1. Only for the few` },
+        sub: s => `Keep ${keepOf(s, "luxury")} of each sale. Only for the few` },
     ],
     fb: (s, r) => {
       const margin = r.price - r.unitCost;
       if (margin <= 0) return { emoji: "😱", text: `Uh oh! Each one costs more to make than you sell it for, so you <b>lose money</b> every time you sell one.` };
-      const keep = pence(margin / r.price);
+      const keep = pct(margin / r.price);
       return {
-        rock: `So cheap! Queues for days, but you only keep ${keep} of every £1.`,
-        low: `Cheap! More customers, but you only keep ${keep} of every £1.`,
-        pwyw: `People love choosing! Most pay a bit less than normal, so you keep about ${keep} of every £1.`,
-        mid: `A fair price. You keep ${keep} of every £1 after paying for stock, before rent and wages.`,
-        high: `You keep ${keep} of every £1. Customers will expect it to be amazing.`,
-        luxury: `You keep a huge ${keep} of every £1, but most people can't afford it.`,
+        rock: `So cheap! Queues for days, but you only keep ${keep} of each sale.`,
+        low: `Cheap! More customers, but you only keep ${keep} of each sale.`,
+        pwyw: `People love choosing! Most pay a bit less than normal, so you keep about ${keep} of each sale.`,
+        mid: `A fair price. You keep ${keep} of each sale after paying for stock, before rent and wages.`,
+        high: `You keep ${keep} of each sale. Customers will expect it to be amazing.`,
+        luxury: `You keep a huge ${keep} of each sale, but most people can't afford it.`,
       }[s.price];
     },
   },

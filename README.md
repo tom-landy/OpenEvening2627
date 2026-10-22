@@ -4,7 +4,7 @@ An open evening game for Business Studies. Students pick what to sell (12 produc
 
 A ticker along the bottom of the game screens scrolls facts from tonight's games (`public/insights.js`): totals, the top business, and which choices and event reactions earned the most.
 
-A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, a pie chart of what people sold, what they chose at each step, the latest games, the choice that made the biggest difference, and star ratings along the bottom.
+A live dashboard at `/dashboard` shows how everyone has done all evening: totals, top 10, a pie chart of what people sold, what they chose at each step, a goals table (how many chose each goal, how many hit the target, average profit), the latest game, the choice that made the biggest difference, and star ratings along the bottom.
 
 Plain HTML, CSS and JavaScript plus a small Node server with no dependencies.
 

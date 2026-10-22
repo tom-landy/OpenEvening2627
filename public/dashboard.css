@@ -113,18 +113,32 @@ body.hide-mode [data-id] { cursor: pointer; outline: 2px dashed rgba(232, 51, 11
 .star-tile .sbar { grid-area: b; height: .55rem; border-radius: 4px; background: var(--track); margin-top: .35rem; }
 .star-tile .sbar i { display: block; height: 100%; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--accent); transition: width .8s ease-out; }
 
+/* goals table */
+.goal-table { list-style: none; margin: 0; padding: 0; }
+.side .insight + h2 { margin-top: .9rem; }
+.goal-table li { display: grid; grid-template-columns: 1.5rem 1fr 2.6rem 6.4rem 5rem; gap: .45rem; align-items: center; padding: .02rem 0; font-size: .95rem; }
+.goal-table li.head { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+.goal-table li.head span:nth-child(n+3) { text-align: right; }
+.goal-table li.zero { opacity: .45; }
+.goal-table .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal-table em { font-style: normal; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.goal-table > li > b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hitbar { position: relative; height: 1.05rem; border-radius: 4px; background: var(--track); }
+.hitbar i { display: block; height: 100%; min-width: 2px; border-radius: 4px; background: #1baf7a; transition: width .8s ease-out; }
+.hitbar b { position: absolute; right: .3rem; top: 50%; translate: 0 -50%; font-size: .8rem; font-weight: 600; }
+
 /* lesson + feed */
 .insight:empty { display: none; }
 .insight { background: var(--accent); color: #3a2a00; border-radius: 1rem; padding: .7rem 1rem; }
 .insight span { font-weight: 600; text-transform: uppercase; letter-spacing: .05em; font-size: .9rem; }
-.insight p { margin: .3rem 0 0; font-size: 1.3rem; line-height: 1.3; }
+.insight p { margin: .2rem 0 0; font-size: 1.2rem; line-height: 1.25; }
 .feed { list-style: none; margin: 0; padding: 0; }
 .feed li { display: grid; grid-template-columns: 1fr auto auto; gap: .6rem; align-items: baseline; padding: .32rem 0; border-bottom: 1px solid var(--line); font-size: 1.1rem; }
 .feed li:last-child { border-bottom: 0; }
 .feed span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed small { color: var(--muted); font-size: .85rem; }
 .feed b { font-variant-numeric: tabular-nums; font-weight: 600; }
-li.new { animation: flash 2.5s ease-out; }
+li.new, .kpi small .new { animation: flash 2.5s ease-out; }
 body.hiding [data-id] { cursor: pointer; }
 body.hiding [data-id]:hover { background: #ffe0ec; }
 

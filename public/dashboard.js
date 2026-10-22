@@ -103,15 +103,14 @@ function render() {
   renderProducts(all);
   renderChoices(all);
   renderStars(all);
+  renderGoals(all);
   renderInsight(all);
 
-  const latest = [...all].sort((a, b) => b.t - a.t).slice(0, 5);
-  $("feed").innerHTML = latest.map(r => `
-    <li data-id="${r.id}" class="${shownIds.size && !shownIds.has(r.id) ? "new" : ""}">
-      <span>${PRODUCTS[r.choices.product].emoji} ${esc(r.name)}</span>
-      <small>${ago(r.t)}</small>
-      <b class="${r.profit < 0 ? "neg" : ""}">${money(r.profit)}</b>
-    </li>`).join("");
+  // Latest game, under the count, so new arrivals are visible
+  const latest = all.reduce((a, r) => (!a || r.t > a.t ? r : a), null);
+  $("kLatest").innerHTML = latest
+    ? `<span class="${shownIds.size && !shownIds.has(latest.id) ? "new" : ""}" data-id="${latest.id}">Latest: ${PRODUCTS[latest.choices.product].emoji} ${esc(latest.name)} · ${money(latest.profit)}</span>`
+    : "";
 
   shownIds = new Set(all.map(r => r.id));
   if (!shownIds.size) shownIds = new Set(["none"]);
@@ -165,10 +164,6 @@ function renderChoices(all) {
     const pool = d.when ? all.filter(r => d.when(r.choices)) : all;
     return { title: `${d.icon} ${d.name}`, pool, rows: d.options.map(o => ({ emoji: o.emoji, label: o.short, n: pool.filter(r => r.choices[d.key] === o.id).length })) };
   });
-  columns.push({
-    title: "🎯 Goals", pool: all,
-    rows: GOALS.map(g => ({ emoji: g.emoji, label: g.short, n: all.filter(r => (r.choices.objectives || []).includes(g.id)).length })),
-  });
   $("choices").innerHTML = columns.map(col => {
     let rows = col.rows.map(r => ({ ...r, pct: col.pool.length ? Math.round((100 * r.n) / col.pool.length) : 0 }));
     if (rows.length > 6) rows = [...rows].sort((a, b) => b.n - a.n).slice(0, 6);
@@ -180,6 +175,33 @@ function renderChoices(all) {
         <div class="cbar"><i style="width:${(100 * r.pct) / top}%"></i></div>
       </div>`).join("") + "</div>";
   }).join("");
+}
+
+// Goals: how many chose each, how many hit the target, and their average profit.
+// Results don't store whether a goal was hit, so it's worked out again from the
+// choices (once per game, then remembered).
+const goalHitCache = {};
+function goalHits(r) {
+  if (!goalHitCache[r.id]) {
+    try { goalHitCache[r.id] = simulate(r.choices).goalResults; } catch { goalHitCache[r.id] = []; }
+  }
+  return goalHitCache[r.id];
+}
+function renderGoals(all) {
+  const rows = GOALS.map(g => {
+    const list = all.filter(r => (r.choices.objectives || []).includes(g.id));
+    const hit = list.filter(r => goalHits(r).some(x => x.id === g.id && x.hit)).length;
+    return { g, n: list.length, hitPct: list.length ? Math.round((100 * hit) / list.length) : 0, avg: avg(list) };
+  }).sort((a, b) => b.n - a.n || a.g.label.localeCompare(b.g.label));
+  const players = Math.max(1, all.length);
+  $("goalTable").innerHTML = `<li class="head"><span></span><span>Goal</span><span>Chose</span><span>Hit target</span><span>Avg profit</span></li>` +
+    rows.map(r => `
+    <li class="${r.n ? "" : "zero"}" title="${r.n} chose ${r.g.label}; ${r.hitPct}% hit the target; average profit ${money(r.avg)}">
+      <span>${r.g.emoji}</span><span class="nm">${r.g.short}</span>
+      <em>${Math.round((100 * r.n) / players)}%</em>
+      <span class="hitbar"><i style="width:${r.hitPct}%"></i><b>${r.n ? r.hitPct + "%" : "–"}</b></span>
+      <b class="${r.avg < 0 ? "neg" : ""}">${r.n ? money(r.avg) : "–"}</b>
+    </li>`).join("");
 }
 
 const STAR_TITLES = ["Back to the drawing board", "Just about surviving", "Solid start", "Rising star", "Business tycoon"];

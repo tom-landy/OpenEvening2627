@@ -23,6 +23,7 @@ const STEPS = [
   },
   {
     key: "objectives", icon: "🎯", title: "Pick 2 goals for your first year", pickCount: 2,
+    desc: s => `${MARKET_TEXT[s.market].emoji} Market report: ${MARKET_TEXT[s.market].title}. ${MARKET_TEXT[s.market].text}`,
     // Only the aim is shown: what each goal does to the business is revealed at the end
     options: GOALS.map(g => ({ id: g.id, emoji: g.emoji, label: g.label, sub: `Aim: ${g.target}` })),
     fb: s => {
@@ -59,7 +60,8 @@ let feedbackShownAt = 0;
 const $ = id => document.getElementById(id);
 
 function picks() {
-  const p = state.event ? { event: state.event } : {};
+  const p = { market: state.market };
+  if (state.event) p.event = state.event;
   activeSteps().forEach(st => { if (state[st.key] && !(st.pickCount && state[st.key].length < st.pickCount)) p[st.key] = state[st.key]; });
   return p;
 }
@@ -71,12 +73,14 @@ function show(id) {
 }
 
 function startGame() {
-  state = {};
+  // Each year gets a random market, so no single plan wins every time
+  state = { market: pick(Object.keys(MARKETS)) };
   step = 0;
   lastResult = null;
   $("panel").classList.remove("done");
   resetScene();
   resetMeters();
+  $("marketChip").hidden = true;
   show("game");
   renderStep();
 }
@@ -168,6 +172,10 @@ function askName(product) {
 }
 function useName(name) {
   state.name = name;
+  const m = MARKET_TEXT[state.market];
+  $("marketChip").innerHTML = `${m.emoji} ${m.title}`;
+  $("marketChip").title = m.text;
+  $("marketChip").hidden = false;
   $("question").classList.remove("naming-now");
   $("qTitle").textContent = STEPS[0].title;
   $("sign").textContent = name;
@@ -444,7 +452,14 @@ function renderEvent(r) {
   const verdict = Math.abs(worth) < 50 ? "It made almost no difference to your profit."
     : worth > 0 ? `That reaction made you <b>${money(worth)}</b> more than doing nothing.`
     : `That reaction cost you <b>${money(-worth)}</b> compared with doing nothing.`;
-  $("eventCard").innerHTML = `<h3>📰 Your surprise: ${t.emoji} ${esc(call(t.title, state))}</h3>
+  const m = MARKET_TEXT[state.market];
+  const marketWorth = r.profit - simulate(picks(), { market: "steady" }).profit;
+  const marketLine = state.market === "steady" ? "A normal year: no help, no harm."
+    : Math.abs(marketWorth) < 50 ? (r.turnedAway > 0 ? "You were so busy it made no difference: you were already turning customers away." : "Your plan dodged it: it made almost no difference.")
+    : marketWorth > 0 ? `Your plan suited it: it gave you <b>${money(marketWorth)}</b> extra.`
+    : `It cost you <b>${money(-marketWorth)}</b>. Could you have planned around it?`;
+  $("eventCard").innerHTML = `<h3>📅 Your market: ${m.emoji} ${m.title}</h3><p>${marketLine}</p>
+    <h3 class="second">📰 Your surprise: ${t.emoji} ${esc(call(t.title, state))}</h3>
     <p>You chose: <b>${resp.emoji} ${esc(call(resp.label, state))}</b>. ${verdict}</p>`;
   $("eventCard").className = "event-card " + (worth > 50 ? "good" : worth < -50 ? "bad" : "");
 }

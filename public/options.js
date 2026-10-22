@@ -392,3 +392,12 @@ const EVENT_TEXT = {
     },
   },
 };
+
+// ---- The market each year (numbers in MARKETS in model.js) ----
+const MARKET_TEXT = {
+  steady: { emoji: "📊", title: "A steady year", text: "Nothing unusual is happening. A normal year for shoppers." },
+  spring: { emoji: "🌧️", title: "A slow, rainy spring", text: "Shoppers are staying in and saving. Luxury and big shopping centres are hit hardest, but online shopping is up." },
+  crash: { emoji: "📉", title: "Luxury crash", text: "Money is tight. Premium and luxury sales halve, and bargains sell more." },
+  summer: { emoji: "☀️", title: "A long hot summer", text: "The town is buzzing. Cold treats, market stalls and pop-up vans boom; hot food suffers." },
+  revival: { emoji: "🏙️", title: "High street revival", text: "People are backing local shops. High streets, colleges and markets are busy; the shopping centre is half empty." },
+};

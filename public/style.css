@@ -368,3 +368,9 @@ body.has-ticker { padding-bottom: 48px; }
 /* less motion: game.js shows one fact at a time instead of scrolling */
 @media (prefers-reduced-motion: reduce) { .ticker-track { animation: none !important; width: 100%; justify-content: center; } }
 .ticker-track span.one::after { content: none; }
+
+/* market for this year */
+.market-chip { background: var(--card); box-shadow: var(--shadow); border-radius: 99px; padding: 6px 14px; font-weight: 600; font-size: 15px; white-space: nowrap; }
+.market-chip[hidden] { display: none; }
+.event-card h3.second { margin-top: 10px; }
+@media (max-width: 640px) { .market-chip { order: 3; font-size: 13px; padding: 4px 12px; } }

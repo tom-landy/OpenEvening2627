@@ -26,6 +26,7 @@ for (let i = 0; i < N; i++) {
   let b = pick(goals);
   while (b === a) b = pick(goals);
   c.objectives = [a, b];
+  c.market = pick(Object.keys(M.MARKETS));
   c.event = pick(M.eventsFor(c));
   c.response = pick(Object.keys(M.EVENTS[c.event].responses));
   const r = M.simulate(c);

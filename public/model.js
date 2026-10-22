@@ -5,18 +5,18 @@
 // worked out from it (see PRICES). unit: what one sale is. staff: who appears.
 const FOOD = ["🧑‍🍳", "👩‍🍳", "👨‍🍳"], SHOP = ["🧑‍💼", "👩‍💼", "👨‍💼"];
 const PRODUCTS = {
-  bubble:   { name: "Bubble Tea",      emoji: "🧋", demand: 2800, unitCost: 1.62, colour: "#ff7eb6", sub: "Cheap to make, loads of fans", staff: FOOD },
-  burger:   { name: "Burgers",         emoji: "🍔", demand: 1800, unitCost: 2.01, colour: "#ffb347", sub: "Everyone's hungry, pricey ingredients", staff: FOOD },
-  phone:    { name: "Phone Cases",     emoji: "📱", demand: 650,  unitCost: 3.95, colour: "#7ec8ff", sub: "Fewer buyers, big mark-up", staff: SHOP },
-  pizza:    { name: "Pizza",           emoji: "🍕", demand: 850,  unitCost: 3.22, colour: "#ff6b57", sub: "Big orders, hot ovens", staff: FOOD },
-  cupcake:  { name: "Cupcakes",        emoji: "🧁", demand: 3000, unitCost: 1.57, colour: "#c58cff", sub: "Small treats, sold by the dozen", staff: FOOD },
-  icecream: { name: "Ice Cream",       emoji: "🍦", demand: 3000, unitCost: 1.57, colour: "#7fe0d0", sub: "Everyone loves it, mostly in summer", staff: FOOD },
-  trainers: { name: "Custom Trainers", emoji: "👟", demand: 100,  unitCost: 22.23, colour: "#ff9f43", sub: "Few sales, huge price tag", staff: SHOP },
-  tshirt:   { name: "Printed T-shirts", emoji: "👕", demand: 400, unitCost: 5.95, colour: "#5fa8ff", sub: "Design it once, print it lots", staff: SHOP },
-  gaming:   { name: "Gaming Café",     emoji: "🎮", demand: 1200, unitCost: 2.54, colour: "#8f7bff", sub: "Sell hours of play, not things", staff: SHOP, unit: "an hour" },
-  plants:   { name: "House Plants",    emoji: "🪴", demand: 700,  unitCost: 3.75, colour: "#6fd36f", sub: "Calm customers, careful stock", staff: SHOP },
-  resell:   { name: "Second-hand Reseller", emoji: "👚", demand: 580, unitCost: 4.33, colour: "#f4a6c8", sub: "Buy pre-loved clothes cheap, sell them on", staff: SHOP },
-  dogs:     { name: "Posh Dog Treats", emoji: "🐶", demand: 650, unitCost: 3.95, colour: "#c8935a", sub: "A small niche, but dog owners are loyal", staff: FOOD },
+  bubble:   { name: "Bubble Tea",      emoji: "🧋", demand: 3330, unitCost: 1.62, colour: "#ff7eb6", sub: "Cheap to make, loads of fans", staff: FOOD },
+  burger:   { name: "Burgers",         emoji: "🍔", demand: 2140, unitCost: 2.01, colour: "#ffb347", sub: "Everyone's hungry, pricey ingredients", staff: FOOD },
+  phone:    { name: "Phone Cases",     emoji: "📱", demand: 770,  unitCost: 3.95, colour: "#7ec8ff", sub: "Fewer buyers, big mark-up", staff: SHOP },
+  pizza:    { name: "Pizza",           emoji: "🍕", demand: 1010,  unitCost: 3.22, colour: "#ff6b57", sub: "Big orders, hot ovens", staff: FOOD },
+  cupcake:  { name: "Cupcakes",        emoji: "🧁", demand: 3560, unitCost: 1.57, colour: "#c58cff", sub: "Small treats, sold by the dozen", staff: FOOD },
+  icecream: { name: "Ice Cream",       emoji: "🍦", demand: 3560, unitCost: 1.57, colour: "#7fe0d0", sub: "Everyone loves it, mostly in summer", staff: FOOD },
+  trainers: { name: "Custom Trainers", emoji: "👟", demand: 120,  unitCost: 22.23, colour: "#ff9f43", sub: "Few sales, huge price tag", staff: SHOP },
+  tshirt:   { name: "Printed T-shirts", emoji: "👕", demand: 480, unitCost: 5.95, colour: "#5fa8ff", sub: "Design it once, print it lots", staff: SHOP },
+  gaming:   { name: "Gaming Café",     emoji: "🎮", demand: 1420, unitCost: 2.54, colour: "#8f7bff", sub: "Sell hours of play, not things", staff: SHOP, unit: "an hour" },
+  plants:   { name: "House Plants",    emoji: "🪴", demand: 830,  unitCost: 3.75, colour: "#6fd36f", sub: "Calm customers, careful stock", staff: SHOP },
+  resell:   { name: "Second-hand Reseller", emoji: "👚", demand: 690, unitCost: 4.33, colour: "#f4a6c8", sub: "Buy pre-loved clothes cheap, sell them on", staff: SHOP },
+  dogs:     { name: "Posh Dog Treats", emoji: "🐶", demand: 770, unitCost: 3.95, colour: "#c8935a", sub: "A small niche, but dog owners are loyal", staff: FOOD },
 };
 
 // Business names are picked at random from these lists, so players never type anything.
@@ -63,7 +63,7 @@ function cleanName(raw) {
 // Fields left out of an option fall back to the neutral values in fill().
 const LOCATIONS = fill({
   street:  { footfall: 1.4, rent: 2000 },
-  mall:    { footfall: 1.7, rent: 3200 },
+  mall:    { footfall: 1.6, rent: 3400 },
   college: { footfall: 1.0, rent: 800 },
   market:  { footfall: 0.75, rent: 250 },
   van:     { footfall: 0.9, rent: 600, marketingBoost: 1.3 },
@@ -79,8 +79,8 @@ const PRICES = fill({
   low:    { margin: 0.5,  demand: 1.65 },
   pwyw:   { margin: 0.58, demand: 1.35, rep: 0.5 },
   mid:    { margin: 0.65, demand: 1 },
-  high:   { margin: 0.76, demand: 0.45, premiumDemand: 0.75 },
-  luxury: { margin: 0.85, demand: 0.12, premiumDemand: 0.3 },
+  high:   { margin: 0.76, demand: 0.45, premiumDemand: 0.6 },
+  luxury: { margin: 0.85, demand: 0.08, premiumDemand: 0.2 },
 }, { rep: 0 });
 // Selling price for a product at a price level
 const priceOf = (product, level) => PRODUCTS[product].unitCost / (1 - PRICES[level].margin);
@@ -127,6 +127,19 @@ const OBJECTIVES = fill({
   cheapest:  { price: 0.88, demand: 1.12, reward: 500, target: (c, r) => r.customers >= 1.5 * PRODUCTS[c.product].demand },
   expand:    { oneOff: 7000, monthly: 400, demand: 1.15, reward: 3000, penalty: 2000, target: (c, r) => r.profit >= 40000 },
 }, { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0, reward: 0, penalty: 0 });
+
+// ---- The market: one per game, drawn at random before the goals ----
+// demand(c) multiplies customers for the whole year, so the best plan changes
+// from year to year and no single recipe always wins.
+const POSH = ["high", "luxury"], CHEAP = ["rock", "low", "pwyw"];
+const MARKETS = {
+  steady: { demand: () => 1 },
+  spring: { demand: c => 0.93 * (POSH.includes(c.price) ? 0.65 : 1) * (c.location === "mall" ? 0.8 : c.location === "online" ? 1.25 : 1) },
+  crash: { demand: c => (POSH.includes(c.price) ? 0.55 : CHEAP.includes(c.price) ? 1.2 : 1) },
+  summer: { demand: c => (COLD_TREATS.includes(c.product) ? 1.3 : HOT_FOOD.includes(c.product) ? 0.85 : 1) * (["market", "van"].includes(c.location) ? 1.3 : 1) },
+  revival: { demand: c => (["street", "college", "market"].includes(c.location) ? 1.2 : c.location === "mall" ? 0.6 : c.location === "online" ? 0.9 : 1) },
+};
+const COLD_TREATS = ["bubble", "icecream"], HOT_FOOD = ["pizza", "burger"];
 
 // ---- Surprise events, halfway through the year ----
 // One is drawn at random from those that fit the business; the player picks a
@@ -331,7 +344,7 @@ const MARKETING = fill({
   flyers:     { lift: 1.1,  cost: 150 },
   samples:    { lift: 1.2,  cost: 450, rep: 0.5 },
   social:     { lift: 1.3,  cost: 400 },
-  influencer: { lift: 1.6,  cost: 1200 },
+  influencer: { lift: 1.45, cost: 1200 },
   billboard:  { lift: 1.5,  cost: 1600 },
 }, { rep: 0 });
 
@@ -387,6 +400,9 @@ function simulate(picked, opts = {}) {
   }), { unitCost: 1, rep: 0, marketing: 1, demand: 1, monthly: 0, price: 1, wage: 1, oneOff: 0 });
 
   const ev = eventEffect(c, opts.response);
+  // opts.market overrides the market (e.g. "steady" to see what the market did)
+  const market = MARKETS[opts.market || c.market] || MARKETS.steady;
+  const mk = market.demand(c);
 
   // Reputation out of 5, starts at 3
   let rep = 3 + pr.rep + q.rep + st.rep + m.rep + eth.rep + rv.rep + sh.rep + g.rep + ev.rep;
@@ -399,7 +415,7 @@ function simulate(picked, opts = {}) {
   const priceDemand = q.posh && pr.premiumDemand ? pr.premiumDemand : pr.demand;
   const lift = 1 + (m.lift - 1) * loc.marketingBoost;
 
-  const demand = Math.round(p.demand * loc.footfall * priceDemand * q.demand * lift * repFactor * rv.demand * sh.demand * g.demand * ev.demand);
+  const demand = Math.round(p.demand * loc.footfall * priceDemand * q.demand * lift * repFactor * rv.demand * sh.demand * g.demand * ev.demand * mk);
   const capacity = Math.round(st.capacity * q.capacity * eth.capacity * sh.capacity * ev.capacity);
   const customers = Math.min(demand, capacity);
   const turnedAway = Math.max(0, demand - capacity);
@@ -465,7 +481,9 @@ function validChoices(c) {
   if (!eventsFor(out).includes(c.event) || !Object.prototype.hasOwnProperty.call(EVENTS[c.event].responses, c.response)) return null;
   out.event = c.event;
   out.response = c.response;
+  // Older game screens don't send a market; treat those as a steady year
+  out.market = Object.prototype.hasOwnProperty.call(MARKETS, c.market) ? c.market : "steady";
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, validChoices, impactOf, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, SHIPPING, OBJECTIVES, EVENTS, eventsFor, eventEffect, priceOf };
+if (typeof module !== "undefined") module.exports = { simulate, starRating, cleanName, validChoices, impactOf, NAMES, PRODUCTS, LOCATIONS, PRICES, PRICE_DEMAND, QUALITY, STAFF, MARKETING, ETHICS, RIVAL, SHIPPING, OBJECTIVES, EVENTS, eventsFor, eventEffect, priceOf, MARKETS };

@@ -11,6 +11,9 @@
 const pounds = n => "£" + (n >= 20 && n % 1 === 0 ? n : n.toFixed(2));
 const unitWord = s => PRODUCTS[s.product].unit || "each";
 const priceFor = (s, id) => PRODUCTS[s.product].prices[PRICES[id].of] * PRICES[id].mult;
+// Share of each £1 left after paying for stock, as "40p"
+const pence = share => Math.max(0, Math.round(100 * share)) + "p";
+const keepOf = (s, id) => pence(1 - PRODUCTS[s.product].unitCost / priceFor(s, id));
 const isFood = s => PRODUCTS[s.product].staff[0] === "🧑‍🍳";
 
 // Picked after naming the business: choose 2. Players only see the label and
@@ -84,30 +87,34 @@ const DECISIONS = [
   },
   {
     key: "price", name: "Price", icon: "💷", title: "How much will you charge?",
+    desc: "Every product costs something to make. The higher your price, the more of each £1 you keep, but the fewer people buy.",
+    // Shown as how much of each £1 is left after paying for stock (standard
+    // supplier), so a £4 ice cream and an £85 trainer can be compared fairly
     options: [
       { id: "rock", emoji: "📉", label: "Rock bottom", short: "Rock bottom", phrase: "charged rock-bottom prices",
-        sub: s => `${pounds(priceFor(s, "rock"))} ${unitWord(s)}. Cheapest in town` },
+        sub: s => `Keep ${keepOf(s, "rock")} of every £1. Cheapest in town` },
       { id: "low", emoji: "🏷️", label: "Bargain", short: "Bargain", phrase: "charged bargain prices",
-        sub: s => `${pounds(priceFor(s, "low"))} ${unitWord(s)}. Crowds love a deal` },
+        sub: s => `Keep ${keepOf(s, "low")} of every £1. Crowds love a deal` },
       { id: "pwyw", emoji: "🤲", label: "Pay what you want", short: "Pay what you want", phrase: "let people pay what they want",
-        sub: s => `Most pay about ${pounds(priceFor(s, "pwyw"))}. People love it` },
+        sub: s => `Keep about ${keepOf(s, "pwyw")} of every £1. People love it` },
       { id: "mid", emoji: "⚖️", label: "Fair price", short: "Fair", phrase: "charged a fair price",
-        sub: s => `${pounds(priceFor(s, "mid"))} ${unitWord(s)}. Same as most places` },
+        sub: s => `Keep ${keepOf(s, "mid")} of every £1. Same as most places` },
       { id: "high", emoji: "💎", label: "Premium", short: "Premium", phrase: "charged premium prices",
-        sub: s => `${pounds(priceFor(s, "high"))} ${unitWord(s)}. Fewer buyers, more profit each` },
+        sub: s => `Keep ${keepOf(s, "high")} of every £1. Fewer buyers` },
       { id: "luxury", emoji: "👑", label: "Luxury", short: "Luxury", phrase: "charged luxury prices",
-        sub: s => `${pounds(priceFor(s, "luxury"))} ${unitWord(s)}. Only for the few` },
+        sub: s => `Keep ${keepOf(s, "luxury")} of every £1. Only for the few` },
     ],
     fb: (s, r) => {
       const margin = r.price - r.unitCost;
-      if (margin <= 0) return { emoji: "😱", text: `Uh oh! Each sale costs you ${pounds(r.unitCost)} to make, so you <b>lose money</b> every time you sell one.` };
+      if (margin <= 0) return { emoji: "😱", text: `Uh oh! Each one costs more to make than you sell it for, so you <b>lose money</b> every time you sell one.` };
+      const keep = pence(margin / r.price);
       return {
-        rock: `So cheap! Queues for days, but you only keep ${pounds(margin)} from each sale.`,
-        low: `Cheap! More customers, but you only keep ${pounds(margin)} from each sale.`,
-        pwyw: `People love choosing! Most pay a bit less than normal, so you keep about ${pounds(margin)} each.`,
-        mid: `A fair price. You keep ${pounds(margin)} from each sale after paying for stock.`,
-        high: `You keep ${pounds(margin)} from each sale. Customers will expect it to be amazing.`,
-        luxury: `You keep a huge ${pounds(margin)} from each sale, but most people can't afford it.`,
+        rock: `So cheap! Queues for days, but you only keep ${keep} of every £1.`,
+        low: `Cheap! More customers, but you only keep ${keep} of every £1.`,
+        pwyw: `People love choosing! Most pay a bit less than normal, so you keep about ${keep} of every £1.`,
+        mid: `A fair price. You keep ${keep} of every £1 after paying for stock, before rent and wages.`,
+        high: `You keep ${keep} of every £1. Customers will expect it to be amazing.`,
+        luxury: `You keep a huge ${keep} of every £1, but most people can't afford it.`,
       }[s.price];
     },
   },

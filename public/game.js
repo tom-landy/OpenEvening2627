@@ -544,8 +544,8 @@ async function refreshTicker() {
   try {
     const res = await fetch("api/results?after=0", { cache: "no-store" });
     if (!res.ok) return;
-    const items = buildInsights((await res.json()).results);
-    if (!items.length) { $("ticker").hidden = true; document.body.classList.remove("has-ticker"); return; }
+    const facts = buildInsights((await res.json()).results);
+    const items = facts.length ? facts : TICKER_TIPS;
     // Two copies side by side so the scroll loops without a gap
     const row = items.map(t => `<span>${t}</span>`).join("");
     $("tickerTrack").innerHTML = row + row;

@@ -1,5 +1,16 @@
 // Facts about tonight's games for the ticker on the game screens, worked out
 // from everyone's results. Needs model.js and options.js loaded first.
+
+// Shown until there are enough games for real facts, so the ticker is never empty
+const TICKER_TIPS = [
+  "💡 Profit is what's left after <b>all</b> your costs, not just what you sell",
+  "💡 Rent and wages are <b>fixed costs</b>: you pay them even on a quiet day",
+  "💡 The cheapest price isn't always best: check your <b>profit margin</b> on each sale",
+  "💡 Turning customers away? That's a <b>capacity</b> problem",
+  "💡 Great businesses <b>adapt</b> when something goes wrong",
+  "🎯 Some goals come with strings attached. Choose carefully!",
+  "🏆 Tonight's results will appear here as people finish their games",
+];
 function buildInsights(all) {
   if (all.length < 3) return [];
   const fmt = n => (n < 0 ? "-£" : "£") + Math.abs(Math.round(n)).toLocaleString("en-GB");

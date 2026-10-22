@@ -30,14 +30,19 @@ let posts = []; // timestamps only, for a whole-site rate limit
 function record(body, restoring = false) {
   const c = body && body.choices;
   if (!c) return null;
-  // A game saved offline before a reset belongs to the old leaderboard
-  if (body.t && body.t < resetAt) return null;
   const choices = M.validChoices(c);
   if (!choices) return null;
   // A typed name that fails the filter quietly becomes one of the ready-made ones
   const name = M.cleanName(body.name) || randomName(choices.product);
+  const now = Date.now();
+  // A game sent within 10 minutes of its own clock is a fresh game: use the
+  // server's time, so a device whose clock is a little off isn't mistaken for
+  // a game from before a reset. Older times are games that waited offline.
+  const fresh = !restoring && !(Math.abs(now - body.t) > 10 * 60000);
   const maxAge = restoring ? KEEP_MS : 12 * 3600000;
-  const timeOk = body.t > Date.now() - maxAge && body.t <= Date.now();
+  const timeOk = !fresh && body.t > now - maxAge && body.t <= now;
+  // A game that waited offline from before a reset belongs to the old leaderboard
+  if (!fresh && body.t < resetAt) return null;
   if (restoring && (!timeOk || !UUID.test(body.id) || results.some(x => x.id === body.id))) return null;
   // Work the result out here rather than trusting numbers sent by the browser
   const r = M.simulate(choices);
